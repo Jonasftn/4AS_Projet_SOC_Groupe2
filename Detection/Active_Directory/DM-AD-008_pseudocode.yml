@@ -1,0 +1,13 @@
+title: DM-AD-008 - Delegation Kerberos (modification des attributs de delegation)
+severite: high
+logsource:
+  product: windows
+  service: security
+  category: directory_service
+detection:
+  selection:
+    EventID: 5136
+    AttributeLDAPDisplayName:
+      - msDS-AllowedToDelegateTo
+      - msDS-AllowedToActOnBehalfOfOtherIdentity
+  condition: selection

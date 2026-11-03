@@ -1,0 +1,10 @@
+# DM-AD-004 - Password spraying
+# Nom alerte : [BUILD] [MEDIUM] Password spraying
+# App SA_BUILD / cron */5 * * * * / webhook n8n
+# Logique : une meme source IP qui echoue sur plus de 10 comptes distincts en 15 min
+
+index=main source="WinEventLog:Security" (EventCode=4625 OR EventCode=4771 OR EventCode=4776)
+| eval compte=mvindex('Account_Name',-1)
+| stats dc(compte) as nb_comptes values(compte) as comptes min(_time) as debut max(_time) as fin by Source_Network_Address
+| where nb_comptes > 10
+| convert ctime(debut) ctime(fin)

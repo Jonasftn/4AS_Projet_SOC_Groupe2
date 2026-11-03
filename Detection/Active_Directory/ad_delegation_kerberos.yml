@@ -1,0 +1,106 @@
+title: Delegation Kerberos - modification des attributs de delegation
+id: DM-AD-008
+status: draft
+description: >
+  Detecte la modification des attributs de delegation (msDS-AllowedToDelegateTo, msDS-AllowedToActOnBehalfOfOtherIdentity, flag TRUSTED_FOR_DELEGATION).
+author: Groupe 2 - Amélie SAUVAN-MAGNET
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1134/005/
+tags:
+- attack.privilege_escalation
+- attack.t1134.005
+killchain: Elevation de privileges
+attack_summary:
+  mechanism: Configuration d'une delegation contrainte ou RBCD pour usurper des utilisateurs sur un service.
+  attacker_prerequisites: Droit d'ecriture sur l'objet cible.
+  environment_prerequisites: SACL en ecriture sur les objets ordinateurs et utilisateurs.
+  complexity: moyenne
+logsource:
+  product: windows
+  category: directory_service
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '5136'
+  - '4742'
+  - '4738'
+  audit_policy: 'Audit Directory Service Changes et Computer/User Account Management : Success and Failure'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: Necessite une SACL; verifier le nom du champ LDAP_Display_Name.
+detection:
+  selection:
+    EventID: 5136
+    AttributeLDAPDisplayName:
+    - msDS-AllowedToDelegateTo
+    - msDS-AllowedToActOnBehalfOfOtherIdentity
+  condition: selection
+fields:
+- actor
+- DN
+- LDAP_Display_Name
+- ComputerName
+level: high
+severity_rationale: >
+  Permet l'usurpation d'identite vers des services; HIGH.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Configuration legitime de delegation par les administrateurs
+exclusions:
+  mechanism: lookup CSV des changements planifies
+  entries: []
+known_evasions:
+- Delegation non contrainte via userAccountControl (non couverte ici)
+design_choice: >
+  Couvre RBCD et delegation contrainte; la delegation non contrainte est a ajouter via 4742/4738.
+splunk:
+  alert_name: '[BUILD] [HIGH] Delegation Kerberos - modification des attributs de delegation'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: DN
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Security" EventCode=5136
+    (LDAP_Display_Name="msDS-AllowedToDelegateTo" OR LDAP_Display_Name="msDS-AllowedToActOnBehalfOfOtherIdentity")
+    | eval actor=mvindex(Account_Name, 0)
+    | table _time ComputerName actor DN LDAP_Display_Name Operation_Type Value
+response:
+  containment:
+  - Retirer la delegation ajoutee
+  - Desactiver le compte auteur de la modification
+  remediation:
+  - Revue des delegations existantes
+  - Marquer les comptes sensibles comme 'non delegables'
+  do_not:
+  - Ne pas laisser la delegation en place pendant l'investigation
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-008.md
+  pivots:
+  - P-USER-LOGONS
+  - P-LOGON-SESSION
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  command: impacket-rbcd -delegate-from <machine$> -delegate-to <cible$> -action write test.local/<user>:<pass>
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Amélie SAUVAN-MAGNET
+  change: Creation (draft)

@@ -1,0 +1,142 @@
+title: Acces a /etc/shadow
+id: DM-LIN-003
+status: draft
+description: >
+  Detecte la lecture ou la copie de /etc/shadow (ou gshadow, sauvegardes) par une commande utilisateur,
+  y compris via chemin deguise, wildcard ou nom relatif.
+author: Groupe 2 - Killian MUNT-BURON
+date: 2026/11/02
+modified: 2026/11/03
+references:
+- https://attack.mitre.org/techniques/T1003
+tags:
+- attack.credential_access
+- attack.t1003
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: cat, cp, less ou outils de cracking lisent les hash de mots de passe locaux.
+  attacker_prerequisites: Droits root.
+  environment_prerequisites: Kunai installe.
+  complexity: faible
+logsource:
+  product: linux
+  category: process_creation
+  service: kunai
+data_requirements:
+- source: kunai (JSON)
+  event_ids:
+  - execve
+  audit_policy: Collecte Kunai
+  collected_on: serveurs Linux
+  verified_in_splunk: false
+  notes: Champs Kunai (info.event.name, data.command_line, info.task.user, info.host.name) a verifier sur des donnees reelles. Le champ cmd est calcule dans le SPL, pas fourni par Kunai. Verifier si data.command_line contient les arguments tels que saisis (wildcards non developpes, ce qui est le cas si le shell les developpe avant execve a verifier) et si un champ cwd est disponible pour affiner selection_relative.
+detection:
+  selection_path:
+    info.event.name: execve
+    data.command_line|re: '(?i)(/etc/+([.]?/+)*|/var/backups/)g?shadow'
+  selection_wildcard:
+    info.event.name: execve
+    data.command_line|re: '(?i)/etc/+([.]?/+)*g?(s|sh|sha|shad|shado)[*?[]'
+  selection_relative:
+    info.event.name: execve
+    data.command_line|re: '(?i)(^|[/\s])(cat|cp|less|more|head|tail|strings|base64|xxd|dd|sed|awk|grep|tar|unshadow|john)\s([^|;&]*[\s=])?g?shadow-?(\s|$)'
+  condition: selection_path or selection_wildcard or selection_relative
+fields:
+- _time
+- info.host.name
+- info.task.user
+- data.command_line
+level: high
+severity_rationale: >
+  Exposition de hash locaux. HIGH.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Outils d'audit de securite
+- Scripts de sauvegarde ou de conformite lisant /etc ou /var/backups
+- Listing ou recherche de fichiers (ls /etc/sh*, find) par un administrateur
+exclusions:
+  mechanism: lookup CSV d'utilisateurs (DM-LIN-003_exclusions.csv, colonnes user,exclude, dans SA_BUILD/lookups)
+  entries: []
+known_evasions:
+- Redirection geree par le shell (cat < /etc/shadow), le chemin n'apparait pas dans la commande
+- Chaine construite, variable ou encodee (/etc/sha""dow, base64, concatenation dans un interpreteur)
+- Lecture par un programme compile ou un processus deja en cours, sans execve dedie
+- Wildcard trop generique (cat /etc/*), non detecte pour limiter le bruit
+design_choice: >
+  Trois motifs complementaires sur execve : chemin explicite (avec variantes ///, /./, gshadow,
+  /var/backups), wildcard sur le dernier element du chemin, et nom relatif apres un binaire de lecture.
+  Prefiltre Splunk sur shadow ou /etc/ pour la performance. Une ligne par commande (pas de stats)
+  pour respecter le table impose. Whitelist par lookup utilisateur (vide par defaut). Une seule
+  alerte par recherche (trigger_mode once), avec throttle par hote pour limiter le bruit.
+  Les evasions sans trace dans la ligne de commande demandent des evenements de lecture de fichier Kunai (hors perimetre).
+splunk:
+  alert_name: '[BUILD] [HIGH] Acces a /etc/shadow'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: info.host.name
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main sourcetype=*kunai* | spath
+    | search info.event.name="execve" (data.command_line="*shadow*" OR data.command_line="*/etc/*")
+    | eval cmd='data.command_line'
+    | where isnotnull(cmd)
+    | where match(cmd, "(?i)(/etc/+([.]?/+)*|/var/backups/)g?shadow")
+       OR match(cmd, "(?i)/etc/+([.]?/+)*g?(s|sh|sha|shad|shado)[*?[]")
+       OR match(cmd, "(?i)(^|[/\s])(cat|cp|less|more|head|tail|strings|base64|xxd|dd|sed|awk|grep|tar|unshadow|john)\s([^|;&]*[\s=])?g?shadow-?(\s|$)")
+    | lookup DM-LIN-003_exclusions.csv user AS info.task.user OUTPUT exclude
+    | where isnull(exclude)
+    | table _time info.host.name info.task.user data.command_line
+response:
+  containment:
+  - Isoler l'hote
+  - Changer les mots de passe locaux
+  remediation:
+  - Politique de mots de passe robuste
+  do_not:
+  - Ne pas modifier /etc/shadow avant collecte
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-LIN-003.md
+  pivots:
+  - P-USER-LOGONS
+  - P-PROC-TREE
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: ''
+  environment: non disponible
+  command: sudo cat /etc/shadow
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+- date: ''
+  environment: non disponible
+  command: 'sudo cat /etc/sha* ; cd /etc && sudo cat shadow ; sudo cat /etc//shadow (hote Linux de test)'
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS pour chaque commande
+  result: non teste
+  evidence: ''
+- date: ''
+  environment: non disponible
+  command: 'cat /etc/passwd ; ls /etc (hote Linux de test)'
+  expected: Aucune alerte
+  result: non teste
+  evidence: ''
+untestable_reason: 'Aucune machine Linux avec Kunai dans le lab: validation par lecture de la documentation Kunai et d''un jeu d''evenements d''exemple.'
+changelog:
+- date: 2026/11/02
+  author: Killian MUNT-BURON
+  change: Creation (draft)
+- date: 2026/11/03
+  author: Killian MUNT-BURON
+  change: Alignement sur le format DM-LIN-002, ajout du lookup d'exclusions, correction de la syntaxe SPL
+- date: 2026/11/03
+  author: Killian MUNT-BURON
+  change: Extension de la detection (chemins deguises, wildcards, nom relatif, gshadow, sauvegardes) et ajout de tests

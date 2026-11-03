@@ -1,0 +1,151 @@
+title: Commande d'enumeration locale (base)
+name: lin_enum_base
+id: DM-LIN-000
+status: draft
+description: >
+  Detecte l'execution d'une commande de decouverte locale. Regle de base non alertante,
+  utilisee uniquement par la correlation DM-LIN-001.
+author: Groupe 2 - Killian MUNT-BURON
+date: 2026/11/03
+logsource:
+  product: linux
+  category: process_creation
+  service: kunai
+detection:
+  selection:
+    info.event.name: execve
+    data.command_line|re: '^(?:\S*/)?(?:id|whoami|uname|hostname|ip|ss|ps|w|who|crontab|getent|lsblk|arp|groups)(?:\s|$)'
+  condition: selection
+level: informational
+---
+title: Multiples commandes d'enumeration locale
+id: DM-LIN-001
+status: draft
+description: >
+  Detecte plusieurs commandes de decouverte distinctes lancees en peu de temps par un meme utilisateur.
+author: Groupe 2 - Killian MUNT-BURON
+date: 2026/11/02
+modified: 2026/11/03
+references:
+- https://attack.mitre.org/techniques/T1082/
+- https://attack.mitre.org/techniques/T1033/
+- https://attack.mitre.org/techniques/T1016/
+- https://attack.mitre.org/techniques/T1049/
+- https://attack.mitre.org/techniques/T1069/
+- https://attack.mitre.org/techniques/T1087/
+- https://attack.mitre.org/techniques/T1018/
+tags:
+- attack.discovery
+- attack.t1082
+- attack.t1033
+- attack.t1016
+- attack.t1049
+- attack.t1069
+- attack.t1087
+- attack.t1018
+killchain: Reconnaissance interne
+attack_summary:
+  mechanism: L'attaquant enchaine id, whoami, uname, ip, sudo -l... apres obtention d'un shell.
+  attacker_prerequisites: Shell sur l'hote.
+  environment_prerequisites: Kunai installe sur tous les serveurs Linux.
+  complexity: faible
+correlation:
+  type: value_count
+  rules:
+  - lin_enum_base
+  group-by:
+  - info.host.name
+  - info.task.user
+  timespan: 5m
+  condition:
+    gte: 6
+    field: cmd
+data_requirements:
+- source: kunai (JSON)
+  event_ids:
+  - execve
+  audit_policy: Collecte Kunai
+  collected_on: serveurs Linux
+  verified_in_splunk: false
+  notes: Champs Kunai a verifier sur des donnees reelles. Le champ cmd (premier mot de data.command_line, sans chemin) est calcule dans le SPL, pas fourni par Kunai.
+fields:
+- info.host.name
+- info.task.user
+- nb_cmd
+- commandes
+level: low
+severity_rationale: >
+  Signe precoce de post-exploitation mais bruit possible. LOW, MEDIUM si l'hote est le bastion.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Scripts d'inventaire
+- Administrateurs
+exclusions:
+  mechanism: lookup CSV d'utilisateurs (DM-LIN-001_exclusions.csv, colonnes user,exclude, dans SA_BUILD/lookups)
+  entries: []
+known_evasions:
+- Commandes etalees dans le temps
+- Binaires renommes
+- Prefixes sudo ou env (sudo id n'est pas compte)
+- Rafale a cheval sur deux executions planifiees
+design_choice: >
+  Seuil sur le nombre de commandes distinctes pour reduire le bruit.
+splunk:
+  alert_name: '[BUILD] [LOW] Multiples commandes d''enumeration locale'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for_each_result
+  throttle:
+    fields: info.host.name,info.task.user
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main sourcetype=*kunai* | spath
+    | search info.event.name="execve"
+    | eval cmd=replace(mvindex(split('data.command_line', " "), 0), "^.*/", "")
+    | where cmd IN ("id","whoami","uname","hostname","ip","ss","ps","w","who","crontab","getent","lsblk","arp","groups")
+    | lookup DM-LIN-001_exclusions.csv user AS info.task.user OUTPUT exclude
+    | where isnull(exclude)
+    | stats dc(cmd) as nb_cmd values('data.command_line') as commandes earliest(_time) as _time by info.host.name, info.task.user
+    | where nb_cmd>=6
+    | table _time info.host.name info.task.user nb_cmd commandes
+response:
+  containment:
+  - Verifier la session SSH associee et la terminer si non legitime
+  remediation:
+  - Restreindre sudo
+  - Revue des acces SSH
+  do_not:
+  - Ne pas tuer le shell avant d'avoir recupere son historique
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-LIN-001.md
+  pivots:
+  - P-USER-LOGONS
+  - P-PROC-TREE
+  - P-SRC-IP-SCOPE
+  client_notification: non - qualification sous 12h (SLA LOW)
+tests:
+- date: ''
+  environment: non disponible
+  command: 'id; whoami; uname -a; hostname; ip a; ps aux (hote Linux de test)'
+  expected: 6 commandes distinctes, alerte LOW dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+- date: ''
+  environment: non disponible
+  command: 'id; id; id; id; id; id; id; id (hote Linux de test)'
+  expected: 1 commande distincte, aucune alerte
+  result: non teste
+  evidence: ''
+untestable_reason: 'Aucune machine Linux avec Kunai dans le lab: validation par lecture de la documentation Kunai et d''un jeu d''evenements d''exemple.'
+changelog:
+- date: 2026/11/02
+  author: Killian MUNT-BURON
+  change: Creation (draft)

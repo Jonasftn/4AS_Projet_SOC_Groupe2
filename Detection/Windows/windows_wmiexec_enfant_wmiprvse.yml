@@ -1,0 +1,106 @@
+title: Processus enfant inhabituel de WmiPrvSE (variante silentcommand)
+id: DM-WIN-006
+status: test
+description: >
+  Detecte un processus enfant de WmiPrvSE.exe sans redirection vers 127.0.0.1, couvrant wmiexec avec -silentcommand et d'autres executions WMI distantes.
+author: Groupe 2 - Nathan SACIER
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1047/
+tags:
+- attack.lateral_movement
+- attack.t1047
+killchain: Mouvement lateral / execution
+attack_summary:
+  mechanism: 'WMI Win32_Process.Create sans sortie recuperee: la ligne de commande est celle du programme lance.'
+  attacker_prerequisites: Droits administrateur et acces RPC/SMB.
+  environment_prerequisites: WMI actif.
+  complexity: faible
+logsource:
+  product: windows
+  category: process_creation
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  audit_policy: Process Creation (sysmon-modular)
+  collected_on: tous
+  verified_in_splunk: true
+  notes: 'Verifie en labo (03/11): detecte la variante wmiexec -silentcommand (enfant de wmiprvse sans redirection 127.0.0.1) et laisse les cas avec redirection a DM-WIN-005. Dans ce lab, aucun trafic WMI legitime (baseline 24h = uniquement les tests), donc exclusions vides ; en production la lookup d''exclusion serait a alimenter (SCCM, supervision, WerFault...).'
+detection:
+  selection:
+    ParentImage|endswith: \wmiprvse.exe
+  filter_exclusions:
+    Image|endswith:
+    - \WerFault.exe
+    - \ccmexec.exe
+  filter_redirect:
+    CommandLine|contains: 127.0.0.1
+  condition: selection and not filter_exclusions and not filter_redirect
+fields:
+- ComputerName
+- LogonId
+- Image
+- CommandLine
+level: medium
+severity_rationale: >
+  Moins specifique que DM-WIN-005 (agents d'administration legitimes). MEDIUM, a relever si le logon associe est reseau depuis une IP inconnue.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- SCCM, supervision, scripts WMI legitimes
+exclusions:
+  mechanism: lookup CSV des Image et comptes connus
+  entries: []
+known_evasions:
+- Binaires legitimes detournes qui figurent dans les exclusions
+design_choice: >
+  Separee de DM-WIN-005 pour ne pas degrader la precision de la regle principale.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Processus enfant inhabituel de WmiPrvSE (variante silentcommand)'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,LogonId
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 ParentImage="*\\wmiprvse.exe"
+    NOT Image IN ("*\\WerFault.exe", "*\\ccmexec.exe")
+    | where NOT match(CommandLine, "127\.0\.0\.1")
+    | stats values(Image) as images values(CommandLine) as commandes values(User) as user by ComputerName, LogonId
+response:
+  containment:
+  - Isoler l'hote si l'activite n'est pas reconnue
+  remediation:
+  - Maintenir la liste d'exclusions des outils d'administration
+  do_not:
+  - Ne pas desactiver WMI sans etude d'impact
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-006.md
+  pivots:
+  - P-LOGON-SESSION
+  - P-PROC-TREE
+  - P-SRC-IP-SCOPE
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: '2026/11/03'
+  environment: lab SRV (192.168.20.101) depuis Kali (192.168.20.200)
+  command: 'impacket-wmiexec -silentcommand TEST/Administrator@192.168.20.101 "cmd.exe /c whoami > C:\Windows\Temp\out.txt"'
+  expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS ; ne doit PAS doublonner avec DM-WIN-005
+  result: 'OK - remonte l''enfant de wmiprvse sans redirection (LogonId 0x317F13) et laisse bien les cas -share C$ avec redirection a DM-WIN-005. Separation 005/006 confirmee.'
+  evidence: Tests/validation_environnement/DM-WIN-006/
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Nathan SACIER
+  change: Creation (draft)

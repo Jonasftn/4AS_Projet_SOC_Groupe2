@@ -1,0 +1,112 @@
+title: Impacket WMIExec - execution de commandes a distance
+id: DM-WIN-005
+status: test
+description: 'Detecte les commandes lancees par wmiexec.py: processus enfant de WmiPrvSE.exe dont la sortie est redirigee vers un partage administratif de 127.0.0.1.
+
+  '
+author: Groupe 2 - Nathan SACIER
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1047/
+tags:
+- attack.lateral_movement
+- attack.t1047
+killchain: Mouvement lateral / execution
+attack_summary:
+  mechanism: Connexion SMB puis appel DCOM/RPC a Win32_Process.Create; WmiPrvSE lance cmd.exe /Q /c <cmd> 1> \\127.0.0.1\<partage>\__<epoch> 2>&1.
+  attacker_prerequisites: Identifiants ou hash d'un administrateur local; acces aux ports 135 et 445.
+  environment_prerequisites: WMI et partages administratifs actifs (comportement par defaut).
+  complexity: faible
+logsource:
+  product: windows
+  category: process_creation
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  audit_policy: Process Creation (sysmon-modular)
+  collected_on: tous
+  verified_in_splunk: true
+  notes: 'Valide: ParentImage wmiprvse.exe, redirection vers 127.0.0.1.'
+- source: WinEventLog:Security
+  event_ids:
+  - '4624'
+  audit_policy: 'Audit Logon : Success and Failure'
+  collected_on: tous
+  verified_in_splunk: true
+  notes: 'Source de l''IP attaquante. Logon_ID est multi-valeur sur 4624: prendre la derniere valeur (mvindex -1). Account_Name aussi multi-valeur. Correle avec LogonId Sysmon (confirme en labo).'
+detection:
+  selection_parent:
+    ParentImage|endswith: \wmiprvse.exe
+  selection_redirect:
+    CommandLine|re: \\\\127\.0\.0\.1\\[^\\]+\\__\d+\.\d+\s+2>&1
+  condition: selection_parent and selection_redirect
+fields:
+- ComputerName
+- LogonId
+- session
+- commandes
+- src_ip
+level: high
+severity_rationale: 'Execution distante avec un compte admin: mouvement lateral confirme. HIGH, CRITICAL si la cible est un DC.
+
+  '
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Outils d'administration utilisant la meme redirection (aucun identifie)
+exclusions:
+  mechanism: lookup CSV (hote, compte) tracant toute exclusion ajoutee en RUN
+  entries: []
+known_evasions:
+- '-silentcommand (aucune redirection) : couvert par DM-WIN-006'
+- '-shell-type powershell : verifier le format de la ligne de commande en labo'
+design_choice: 'Version 2 : partage non code en dur, extraction des commandes par rex, regroupement par session et IP via 4624.
+
+  '
+splunk:
+  alert_name: '[BUILD] [HIGH] Impacket WMIExec - execution de commandes a distance'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: now
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,LogonId
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: "index=main source=\"WinEventLog:Microsoft-Windows-Sysmon/Operational\" EventCode=1 ParentImage=\"*\\\\wmiprvse.exe\"\n| where match(CommandLine, \"\\\\\\\\127\\.0\\.0\\.1\\\\\\\\[^\\\\\\\\]+\\\\\\\\__\\d+\\.\\d+\")\n| rex field=CommandLine \"/c\\s+(?<attacker_cmd>.+?)\\s+1>.+?127\\.0\\.0\\.1.(?<share>.+?).__(?<session>\\d+)\"\n| eval join_id=lower(LogonId)\n| join type=left join_id\n    [ search index=main source=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 NOT Account_Name=\"*$\"\n      | eval join_id=lower(mvindex(Logon_ID, -1))\n      | stats values(Source_Network_Address) as src_ip by join_id ]\n| stats min(_time) as first_seen max(_time) as last_seen values(attacker_cmd) as commandes values(share) as share by ComputerName, LogonId, session, src_ip\n| convert ctime(first_seen) ctime(last_seen)\n"
+response:
+  containment:
+  - Isoler l'hote cible et l'hote source (IP de la session)
+  - Desactiver ou reinitialiser le compte utilise
+  remediation:
+  - Rechercher les autres hotes touches par la meme IP source
+  - Rotation des mots de passe des comptes admin exposes
+  do_not:
+  - Ne pas supprimer les fichiers __<epoch> avant collecte
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-005.md
+  pivots:
+  - P-LOGON-SESSION
+  - P-SRC-IP-SCOPE
+  - P-PROC-TREE
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: 2026/11/03
+  environment: lab SRV (192.168.20.101) depuis Kali (192.168.20.200)
+  command: impacket-wmiexec -share C$ TEST/Administrator@192.168.20.101
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: OK - 1 ligne, session 1793724826, src_ip 192.168.20.200 correctement correlee via LogonId 0x31A549
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Nathan SACIER
+  change: Creation (draft)

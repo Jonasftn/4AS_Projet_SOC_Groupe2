@@ -1,0 +1,6 @@
+index=main source="WinEventLog:Security" (EventCode=4728 OR EventCode=4732 OR EventCode=4756)
+| lookup critical_ad_groups.csv group_name AS TargetUserName OUTPUT tier
+| where isnotnull(tier)
+| eval severity_hint=if(tier==0, "CRITICAL", "HIGH"), rule_id="DM-AD-006"
+| table rule_id severity_hint _time EventCode TargetUserName MemberName MemberSid SubjectUserName ComputerName tier
+| sort - _time

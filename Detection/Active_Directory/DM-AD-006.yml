@@ -1,0 +1,162 @@
+title: Ajout d'un membre a un groupe AD critique
+id: DM-AD-006
+status: draft
+description: >
+  Detecte l'ajout d'un membre a un groupe de securite AD figurant dans la liste des
+  groupes critiques (Domain Admins, Enterprise Admins, Schema Admins, Administrators,
+  Account Operators, Backup Operators, Server Operators, DnsAdmins, Group Policy
+  Creator Owners), evenements 4728/4732/4756, signe d'une elevation de privileges
+  ou d'une persistance.
+author: Groupe 2 - Tim LEVADOUX
+date: 2026/11/04
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1098/
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4728
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4732
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4756
+tags:
+- attack.privilege_escalation
+- attack.persistence
+- attack.t1098
+killchain: Elevation de privileges / Persistance
+attack_summary:
+  mechanism: >
+    Un compte avec le droit de gerer l'appartenance d'un groupe (membre du groupe,
+    delegation AD, ou droit WriteProperty sur member) ajoute un compte (le sien ou un
+    compte compromis) a un groupe donnant des privileges eleves sur le domaine.
+  attacker_prerequisites: >
+    Droit de modification de l'appartenance du groupe cible (appartenance prealable,
+    delegation ACL, ou compromission d'un compte qui possede ce droit).
+  environment_prerequisites: Groupes a privileges existants (presents par defaut dans tout AD).
+  complexity: faible a moyenne, selon le niveau de privilege deja obtenu par l'attaquant
+logsource:
+  product: windows
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4728'
+  - '4732'
+  - '4756'
+  audit_policy: 'Audit Security Group Management : Success'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: >
+    4728 = ajout a un groupe global de securite (ex. Domain Admins), 4732 = groupe local
+    de securite, 4756 = groupe universel de securite. Noms de champs attendus avec le TA
+    Windows : SubjectUserName (acteur), TargetUserName (nom du groupe), MemberName ou
+    MemberSid (compte ajoute), ComputerName (DC). A confirmer dans Splunk avant livraison ;
+    le nom exact du champ portant le groupe et celui portant le membre varient selon la
+    version du TA et doivent etre valides sur un evenement reel avant la mise en production.
+detection:
+  selection:
+    EventID:
+    - 4728
+    - 4732
+    - 4756
+  filter_group_not_critical:
+    TargetUserName|not_in_lookup: critical_ad_groups.csv
+  condition: selection and not filter_group_not_critical
+fields:
+- SubjectUserName
+- TargetUserName
+- MemberName
+- MemberSid
+- ComputerName
+level: high
+severity_rationale: >
+  L'ajout a un groupe a privileges accorde immediatement les droits correspondants.
+  HIGH par defaut, CRITICAL si le groupe cible est de niveau 0 (Domain Admins, Enterprise
+  Admins, Schema Admins, Administrators integres).
+severity_modifiers:
+- +1 (CRITICAL) si le groupe est de niveau 0 (controle total du domaine ou de la foret)
+- +1 si l'acteur (SubjectUserName) n'est pas un administrateur connu de l'equipe infra
+- +1 si l'ajout survient hors des horaires ouvres ou hors fenetre de changement planifiee
+falsepositives:
+- Onboarding/offboarding gere via un outil d'automatisation ou un ticket de changement
+  approuve (ajout legitime par l'equipe infra)
+- Rotation d'un compte de service applicatif necessitant temporairement des droits eleves
+exclusions:
+  mechanism: lookup CSV des acteurs et comptes habituellement ajoutes a ces groupes + filtre dans la requete
+  lookup_file: dm_ad_006_exclusions.csv
+  lookup_columns: actor,member,group,comment
+  entries: []
+known_evasions:
+- Ajout puis retrait rapide du groupe (toujours journalise en deux evenements distincts,
+  4728/4732/4756 puis 4729/4733/4757)
+- Elevation via un groupe non liste dans critical_ad_groups.csv (ex. groupe custom avec
+  delegation equivalente a Domain Admins) - necessite une revue periodique du lookup
+- Ajout via modification directe de l'attribut member sans passer par les API habituelles
+  (reste journalise de la meme maniere par l'audit AD)
+design_choice: >
+  Filtrage par lookup (critical_ad_groups.csv avec colonnes group_name,tier) plutot que
+  liste en dur dans la requete, pour permettre une mise a jour sans modifier la regle.
+  tier=0 pour les groupes de controle total (Domain Admins, Enterprise Admins, Schema
+  Admins, Administrators), tier=1 pour les groupes a privileges operationnels (Account
+  Operators, Backup Operators, Server Operators, DnsAdmins, Group Policy Creator Owners).
+splunk:
+  alert_name: '[BUILD] [HIGH] Ajout d''un membre a un groupe AD critique'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for each result
+  throttle:
+    fields: TargetUserName,MemberSid
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  severity_field: severity_hint
+  search_file: DM-AD-006.spl
+  lookup_prerequisite: >
+    Creer et charger le lookup critical_ad_groups.csv (colonnes group_name,tier) dans
+    SA_BUILD avant d'activer la regle ; sans lui, aucune alerte ne se declenchera
+    (le lookup sert de filtre d'inclusion, pas seulement d'exclusion).
+response:
+  containment:
+  - Retirer immediatement le membre ajoute du groupe si l'ajout n'est pas confirme legitime
+  - Desactiver le compte ajoute (ou le compte acteur si compromis) le temps de l'investigation
+  - Forcer une reauthentification / revocation des tickets Kerberos du compte ajoute
+    (reinitialisation du mot de passe deux fois, krbtgt si Domain Admins/Enterprise Admins touche)
+  remediation:
+  - Revoir qui dispose du droit de modifier l'appartenance de ces groupes (delegation ACL)
+  - Mettre en place un processus d'approbation (PAM / Just-In-Time) pour toute elevation
+    vers un groupe de tier 0
+  - Auditer regulierement la composition reelle des groupes critiques face a l'inventaire attendu
+  do_not:
+  - Ne pas retirer le membre avant d'avoir confirme qu'il ne s'agit pas d'un changement
+    planifie en cours (verifier le ticket de changement avant action)
+  - Ne pas se limiter au retrait du groupe si le compte acteur est lui-meme compromis :
+    traiter l'incident a la source
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-006.md
+  pivots:
+  - P-USER-LOGONS
+  - P-SRC-IP-SCOPE
+  - P-PROC-TREE
+  - P-PRIV-USE
+  client_notification: oui - alerte HIGH/CRITICAL, notification immediate
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  setup: >
+    Creer critical_ad_groups.csv avec au moins une ligne "Domain Admins,0" et charger le
+    lookup dans SA_BUILD. Disposer d'un compte attacker_test membre d'un groupe avec
+    delegation sur l'appartenance de Domain Admins, ou utiliser un compte Domain Admin
+    pour le test initial.
+  command: >
+    Add-ADGroupMember -Identity "Domain Admins" -Members victim_test
+    (ou net group "Domain Admins" victim_test /add /domain)
+  expected: >
+    4728 avec TargetUserName=Domain Admins, MemberName/MemberSid=victim_test,
+    SubjectUserName=attacker_test; alerte CRITICAL (tier 0) dans Splunk puis case DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/04
+  author: Tim LEVADOUX
+  change: Creation (draft)

@@ -1,7 +1,0 @@
-# DM-WIN-007 - Effacement des journaux d'evenements
-# Nom alerte : [BUILD] [HIGH] Effacement des journaux d'evenements
-# App SA_BUILD / cron */5 * * * * / earliest -10m@m / webhook n8n
-
-index=main ((source="WinEventLog:Security" EventCode=1102) OR (source="WinEventLog:System" EventCode=104)
-OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 (CommandLine="*wevtutil*cl*" OR CommandLine="*wevtutil*clear-log*" OR CommandLine="*Clear-EventLog*")))
-| table _time ComputerName source EventCode User Image CommandLine

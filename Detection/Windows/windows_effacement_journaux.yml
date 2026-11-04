@@ -1,48 +1,48 @@
 title: Effacement des journaux d'evenements
 id: DM-WIN-007
-status: draft
+status: test
 description: >
-  Detecte l'effacement des journaux Security (1102), System (104) ou via wevtutil cl / Clear-EventLog.
-author: Groupe 2 - Amélie SAUVAN-MAGNET
+  Detecte l'effacement d'un journal Windows (1102 Security, 104 System) ou l'execution d'une commande d'effacement (wevtutil cl, Clear-EventLog), technique utilisee pour supprimer les traces apres une intrusion.
+author: Groupe 2 - Amelie SAUVAN-MAGNET
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/04
 references:
 - https://attack.mitre.org/techniques/T1070/001/
 tags:
 - attack.defense_evasion
 - attack.t1070.001
-killchain: Evasion de defense
+killchain: Evasion de defense / anti-forensic
 attack_summary:
-  mechanism: L'attaquant efface les journaux pour supprimer les traces de son activite.
-  attacker_prerequisites: Droits administrateur.
-  environment_prerequisites: Journaux locaux modifiables.
+  mechanism: Effacement d'un journal d'evenements pour masquer une activite malveillante. Windows genere systematiquement un evenement au moment de l'effacement (1102 ou 104).
+  attacker_prerequisites: Droits administrateur local sur la machine.
+  environment_prerequisites: Journaux Security et System collectes, Sysmon deploie.
   complexity: faible
 logsource:
   product: windows
-  category: eventlog
-  service: security
+  category: eventlog_cleared
+  service: system
 data_requirements:
 - source: WinEventLog:Security
   event_ids:
   - '1102'
-  audit_policy: Audit Other Policy Change Events / evenement natif
+  audit_policy: Journal Security collecte
   collected_on: tous
-  verified_in_splunk: false
-  notes: 1102 est journalise par defaut.
+  verified_in_splunk: true
+  notes: Genere a l'effacement du journal Security
 - source: WinEventLog:System
   event_ids:
   - '104'
-  audit_policy: Journal System
+  audit_policy: Journal System collecte
   collected_on: tous
-  verified_in_splunk: false
-  notes: ''
+  verified_in_splunk: true
+  notes: Genere a l'effacement d'un journal via l'Observateur
 - source: WinEventLog:Microsoft-Windows-Sysmon/Operational
   event_ids:
   - '1'
-  audit_policy: Process Creation
+  audit_policy: Sysmon ProcessCreate
   collected_on: tous
-  verified_in_splunk: false
-  notes: wevtutil cl / Clear-EventLog
+  verified_in_splunk: true
+  notes: Ligne de commande wevtutil cl / Clear-EventLog
 detection:
   selection_log:
     EventID:
@@ -56,66 +56,68 @@ detection:
   condition: selection_log or selection_cli
 fields:
 - ComputerName
-- User
+- source
 - EventCode
+- User
 - CommandLine
 level: high
 severity_rationale: >
-  Signe fort de dissimulation apres intrusion. HIGH, CRITICAL sur un DC.
+  L'effacement de journaux traduit une volonte de dissimulation et fait perdre de la visibilite pour l'investigation. HIGH.
 severity_modifiers:
 - +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
 - +1 si plusieurs regles se declenchent pour la meme source
 falsepositives:
-- Maintenance planifiee
+- Operation de maintenance planifiee par un administrateur
 exclusions:
-  mechanism: lookup CSV des comptes de maintenance
+  mechanism: lookup CSV des comptes de maintenance autorises
   entries: []
 known_evasions:
-- Arret du service Event Log avant action
+- Arret du service Event Log avant l'action
+- Effacement selectif via API sans passer par wevtutil
 design_choice: >
-  Regle simple et peu bruyante dans une PME.
+  Combinaison des evenements natifs d'effacement (1102, 104) et des lignes de commande Sysmon pour couvrir les deux angles. Le motif cible wevtutil avec cl en argument isole afin d'eviter le bruit de Windows Defender (install-manifest).
 splunk:
   alert_name: '[BUILD] [HIGH] Effacement des journaux d''evenements'
   app: SA_BUILD
   sharing: app
   index: main
   cron: '*/5 * * * *'
-  earliest: -10m@m
-  latest: -5m@m
+  earliest: -15m
+  latest: now
   trigger: number of results > 0
   trigger_mode: once
-  throttle:
-    fields: ComputerName
-    period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
   search: |
-    index=main ((source="WinEventLog:Security" EventCode=1102) OR (source="WinEventLog:System" EventCode=104)
-    OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 (CommandLine="*wevtutil*cl*" OR CommandLine="*wevtutil*clear-log*" OR CommandLine="*Clear-EventLog*")))
-    | table _time ComputerName source EventCode User Image CommandLine
+    index=main ((source="WinEventLog:Security" EventCode=1102) OR (source="WinEventLog:System" EventCode=104) OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 (CommandLine="*wevtutil* cl *" OR CommandLine="*wevtutil* clear-log*" OR CommandLine="*Clear-EventLog*")))
+    | table _time ComputerName source EventCode User CommandLine
 response:
   containment:
   - Isoler l'hote
-  - Verifier la copie centralisee des journaux dans Splunk
+  - S'appuyer sur la copie centralisee des journaux dans Splunk
   remediation:
-  - Restreindre les droits sur les journaux
+  - Retrouver comment le compte utilise a obtenu ses droits
+  - Reconstituer l'activite anterieure a l'effacement a partir des logs deja remontes
   do_not:
-  - 'Ne pas se fier aux journaux locaux: utiliser la copie Splunk'
+  - Ne pas se fier aux seuls journaux locaux de la machine
 investigation:
   playbook: Investigation/fiches_reflexes/DM-WIN-007.md
   pivots:
-  - P-USER-LOGONS
-  - P-LOGON-SESSION
+  - P-ACCOUNT-ACTIVITY
+  - P-HOST-TIMELINE
   - P-PROC-TREE
   client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
 tests:
-- date: ''
+- date: 2026/11/04
   environment: lab DC/SRV/Kali
-  command: wevtutil cl Security
+  command: impacket-smbexec test.local/Administrator:<pass>@192.168.20.100 ; wevtutil cl System
   expected: Alerte HIGH dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: OK
+  evidence: Tests/validation_environnement/DM-WIN-007.csv ; Tests/validation_environnement/captures/DM-WIN-007.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
-  author: Amélie SAUVAN-MAGNET
+  author: Amelie SAUVAN-MAGNET
   change: Creation (draft)
+- date: 2026/11/04
+  author: Amelie SAUVAN-MAGNET
+  change: Test valide en labo, passage en status test

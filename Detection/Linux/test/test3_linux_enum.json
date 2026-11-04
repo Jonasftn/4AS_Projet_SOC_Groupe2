@@ -1,0 +1,1158 @@
+[
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "/usr/bin/id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/passwd"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:35",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_6"
+            }
+        },
+        "data": {
+            "command_line": "cd $(pwd)"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:01:35",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_5_distinct"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/passwd"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:35",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:40",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:02:45",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_repeat_id"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:35",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:40",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:45",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "ss -tulpn"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:50",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:03:55",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "w"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "who"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "crontab -l"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "getent passwd"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "lsblk"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "arp -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:04:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_alert_14"
+            }
+        },
+        "data": {
+            "command_line": "groups"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:05:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_sudo_prefix"
+            }
+        },
+        "data": {
+            "command_line": "sudo ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:45",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-prod"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:50",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-prod"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:06:55",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-prod"
+            },
+            "task": {
+                "user": "test_split_hosts"
+            }
+        },
+        "data": {
+            "command_line": "ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:30",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:35",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:40",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:45",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:50",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:07:55",
+        "info": {
+            "event": {
+                "name": "connect"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_wrong_event"
+            }
+        },
+        "data": {
+            "command_line": "ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "id"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:35",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "whoami"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:40",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "uname -a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:45",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:50",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "ip a"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:08:55",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "ps aux"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "w"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_backup"
+            }
+        },
+        "data": {
+            "command_line": "who"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:40",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "idle --help"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:45",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "psql -l"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:50",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "ipython"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:09:55",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "wget http://example.com/x.sh"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:10:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "sshd -D"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:10:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "test_lookalikes"
+            }
+        },
+        "data": {
+            "command_line": "ssh admin@srv2"
+        }
+    }
+]

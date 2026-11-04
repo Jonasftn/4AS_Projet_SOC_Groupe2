@@ -134,18 +134,18 @@ investigation:
   - P-SRC-IP-SCOPE
   client_notification: non - qualification sous 12h (SLA LOW)
 tests:
-- date: ''
-  environment: non disponible
+- date: 2026/11/04
+  environment: Fichier json simulé d'evenements Kunai 
   command: 'id; whoami; uname -a; hostname; ip a; ps aux (hote Linux de test)'
   expected: 6 commandes distinctes, alerte LOW dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
-- date: ''
-  environment: non disponible
+  result: responds bien à la regle de correlation DM-LIN-001
+  evidence: Regarder dans le rapport les différents images et les fichiers csv.
+- date: 2026/11/04
+  environment: Fichier json simulé d'evenements Kunai
   command: 'id; id; id; id; id; id; id; id (hote Linux de test)'
   expected: 1 commande distincte, aucune alerte
-  result: non teste
-  evidence: ''
+  result: pas d'alerte, reponds bien à la regle de correlation DM-LIN-001
+  evidence: Regarder dans le rapport les différents images et les fichiers csv.
 untestable_reason: 'Aucune machine Linux avec Kunai dans le lab: validation par lecture de la documentation Kunai et d''un jeu d''evenements d''exemple.'
 changelog:
 - date: 2026/11/02
@@ -154,3 +154,6 @@ changelog:
 - date: 2026/11/04
   author: Killian MUNT-BURON
   change: SPL adapte aux champs multivalues (spath sur sourcetype _json), champs calcules cl, srv et usr, rename des champs en sortie
+- date: 2026/11/04
+  author: Killian MUNT-BURON
+  change: Ajout de tests unitaires

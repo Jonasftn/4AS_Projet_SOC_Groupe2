@@ -1,0 +1,7 @@
+"_time",ComputerName,User,detail
+"2026-11-04T11:55:25.000+0000","SRV.test.local","NOT_TRANSLATED
+TEST\Administrator","schtasks  /create /tn Upd /tr ""powershell -enc AAAA"" /sc minute /ru SYSTEM"
+"2026-11-04T11:32:03.000+0000","SRV.test.local","NOT_TRANSLATED
+TEST\Administrator","schtasks  /create /tn Upd /tr ""powershell -enc AAAA"" /sc minute /ru SYSTEM"
+"2026-11-04T12:13:06.000+0000","SRV.test.local","NOT_TRANSLATED
+TEST\Administrator","""C:\Windows\system32\schtasks.exe"" /create /tn Upd /tr ""powershell -enc AAAA"" /sc minute /ru SYSTEM"

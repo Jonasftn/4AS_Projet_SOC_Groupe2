@@ -1,0 +1,2 @@
+"_time",ComputerName,User,Image,TargetObject,Details,"severity_hint"
+"2026-11-04T12:01:34.000+0000","SRV.test.local","NOT_TRANSLATED","C:\Windows\system32\reg.exe","HKU\S-1-5-21-52488999-1929540576-3222198861-500\Software\Microsoft\Windows\CurrentVersion\Run\Upd","C:\Users\Public\a.exe",HIGH

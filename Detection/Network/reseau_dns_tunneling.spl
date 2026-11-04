@@ -1,0 +1,11 @@
+index=main source="wineventlog:microsoft-windows-sysmon/operational" EventCode=22
+| eval requete=lower(trim(QueryName, "."))
+| where NOT match(requete, "[.](in-addr|ip6)[.]arpa$")
+| rex field=requete "^(?<sous_domaine>.+?)[.](?<domain>[^.]+[.](?:(?:co|com|org|net|gov|ac|edu)[.][a-z]{2}|[^.]+))$"
+| where isnotnull(domain)
+| eval longueur=len(sous_domaine)
+| stats dc(requete) as nb_uniques avg(longueur) as longueur_moyenne max(longueur) as longueur_max values(Image) as images min(_time) as premier_evenement max(_time) as dernier_evenement by ComputerName, domain
+| eval longueur_moyenne=round(longueur_moyenne, 1)
+| where nb_uniques>100 AND longueur_moyenne>20
+| eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
+| eval rule_id="DM-NET-004"

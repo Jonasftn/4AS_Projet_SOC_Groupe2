@@ -1,0 +1,147 @@
+title: Scan de ports horizontal et vertical
+id: DM-NET-001
+status: draft
+description: >
+  Detecte une source qui contacte plus de 100 ports differents d'une meme cible (scan vertical)
+  ou plus de 20 hotes internes differents sur un meme port (scan horizontal) sur une fenetre de 10 minutes.
+author: Groupe 2 - Youssef
+date: 2026/11/02
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1046/
+tags:
+- attack.discovery
+- attack.t1046
+killchain: Reconnaissance
+attack_summary:
+  mechanism: Envoi de connexions vers de nombreux ports d'une cible ou vers un meme port de nombreuses cibles pour identifier les hotes et services exposes.
+  attacker_prerequisites: Acces reseau a la cible.
+  environment_prerequisites: Suricata voit le trafic concerne et ses evenements flow arrivent dans Splunk.
+  complexity: faible
+logsource:
+  product: network
+  category: flow
+  service: suricata
+data_requirements:
+- source: suricata (eve.json)
+  event_ids:
+  - flow
+  audit_policy: Suricata NIDS sur le pare-feu
+  collected_on: pare-feu
+  verified_in_splunk: false
+  notes: Presence de Suricata, index, sourcetype et champs (src_ip, dest_ip, dest_port) a verifier sur des donnees reelles. Seuls les flux qui traversent le pare-feu sont visibles.
+detection:
+  selection_flow:
+    event_type: flow
+    dest_port|exists: true
+  selection_dest_interne:
+    dest_ip|cidr:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  condition: (selection_flow | dc(dest_port) by src_ip,dest_ip > 100) or (selection_flow and selection_dest_interne | dc(dest_ip) by src_ip,dest_port > 20)
+fields:
+- rule_id
+- scan_type
+- src_ip
+- dest_ip
+- dest_port
+- nb_ports
+- nb_hotes
+- ports
+- hotes
+- premier_evenement
+- dernier_evenement
+level: medium
+severity_rationale: >
+  Reconnaissance sans impact direct, mais signe possible d'une attaque en preparation. MEDIUM.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Scanner de vulnerabilites autorise
+- Outil de supervision
+- Serveur ou outil d'administration contactant de nombreux hotes internes sur un meme port
+exclusions:
+  mechanism: Aucune pour le premier test. Lookup DM-NET-001_exclusions.csv a ajouter une fois les sources legitimes connues.
+  entries: []
+known_evasions:
+- Scan lent etale au-dela de la fenetre de 10 minutes
+- Scan reparti sur plusieurs sources
+- Scan horizontal limite a 20 hotes par fenetre
+- Scan vertical limite a 100 ports par fenetre
+- Scan horizontal vers Internet, exclu par le filtre sur les destinations internes
+design_choice: >
+  Deux recherches reunies par append, l'une comptant les ports par couple source et cible, l'autre comptant
+  les hotes par couple source et port. Le scan horizontal est limite aux destinations internes pour ne pas
+  alerter sur la navigation web normale. Fenetre de 10 minutes evaluee toutes les 5 minutes, sans tranche
+  fixe, pour eviter de couper un scan en deux. Decalage de 5 minutes pour laisser le temps aux flows d'arriver.
+  Les seuils 100 et 20 sont des choix de conception a ajuster apres les tests.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Scan de ports horizontal et vertical'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -15m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for_each_result
+  throttle:
+    fields: src_ip,scan_type
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main sourcetype=suricata event_type=flow dest_port=*
+    | stats dc(dest_port) as nb_ports values(dest_port) as ports min(_time) as premier_evenement max(_time) as dernier_evenement by src_ip, dest_ip
+    | where nb_ports>100
+    | eval scan_type="vertical", ports=mvindex(ports, 0, 19)
+    | append
+        [ search index=main sourcetype=suricata event_type=flow dest_port=*
+          | where cidrmatch("10.0.0.0/8", dest_ip) OR cidrmatch("172.16.0.0/12", dest_ip) OR cidrmatch("192.168.0.0/16", dest_ip)
+          | stats dc(dest_ip) as nb_hotes values(dest_ip) as hotes min(_time) as premier_evenement max(_time) as dernier_evenement by src_ip, dest_port
+          | where nb_hotes>20
+          | eval scan_type="horizontal", hotes=mvindex(hotes, 0, 19) ]
+    | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
+    | eval rule_id="DM-NET-001"
+response:
+  containment:
+  - Bloquer l'IP source si elle est externe
+  - Identifier la machine et le compte a l'origine du scan si la source est interne
+  remediation:
+  - Reduire la surface exposee
+  do_not:
+  - Ne pas ignorer un scan interne
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-NET-001.md
+  pivots:
+  - P-SRC-IP-SCOPE
+  - P-NET-CONN
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: ''
+  environment: lab groupe 2 (collecte Suricata a confirmer)
+  command: 'nmap -sS -Pn -p- <IP_DC> depuis la Kali'
+  expected: Alerte MEDIUM scan_type=vertical dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+- date: ''
+  environment: lab groupe 2 (collecte Suricata a confirmer)
+  command: 'nmap -Pn -p 22,80,135,139,389,443,445,3389 <IP_DC> depuis la Kali'
+  expected: Aucune alerte
+  result: non teste
+  evidence: ''
+- date: ''
+  environment: donnees d'exemple
+  command: Plus de 20 hotes internes contactes sur le port 445 dans un index de test
+  expected: Un resultat scan_type=horizontal
+  result: non teste
+  evidence: ''
+untestable_reason: 'Collecte Suricata non confirmee dans le lab: a verifier dans Splunk. Le scan horizontal ne peut pas depasser 20 hotes dans le lab (environ 5 machines): validation sur donnees d''exemple.'
+changelog:
+- date: 2026/11/02
+  author: Youssef
+  change: Creation (draft)
+- date: 2026/11/04
+  author: Youssef
+  change: Filtre sur les destinations internes pour le scan horizontal, fenetre de 10 minutes, listes ports et hotes, rule_id, for_each_result

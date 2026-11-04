@@ -7,5 +7,7 @@ index=main source="wineventlog:microsoft-windows-sysmon/operational" EventCode=2
 | stats dc(requete) as nb_uniques avg(longueur) as longueur_moyenne max(longueur) as longueur_max values(Image) as images min(_time) as premier_evenement max(_time) as dernier_evenement by ComputerName, domain
 | eval longueur_moyenne=round(longueur_moyenne, 1)
 | where nb_uniques>100 AND longueur_moyenne>20
+| lookup DM-NET-004_exclusions.csv domain OUTPUT exclude
+| where isnull(exclude)
 | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
 | eval rule_id="DM-NET-004"

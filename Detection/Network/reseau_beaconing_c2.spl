@@ -7,5 +7,7 @@ index=main sourcetype=suricata event_type=flow
 | stats count as nb_connexions avg(delta) as intervalle_moyen stdev(delta) as ecart_type avg(flow.bytes_toserver) as octets_envoyes_moyen min(heure_flux) as premier_evenement max(heure_flux) as dernier_evenement by src_ip, dest_ip, dest_port
 | eval cv=round(ecart_type/intervalle_moyen, 3), intervalle_moyen=round(intervalle_moyen, 1), octets_envoyes_moyen=round(octets_envoyes_moyen, 0)
 | where nb_connexions>=12 AND cv<0.15 AND intervalle_moyen>10
+| lookup DM-NET-002_exclusions.csv dest_ip OUTPUT exclude
+| where isnull(exclude)
 | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
 | eval rule_id="DM-NET-002"

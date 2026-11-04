@@ -8,5 +8,7 @@ index=main sourcetype=suricata event_type=flow dest_port=*
       | stats dc(dest_ip) as nb_hotes values(dest_ip) as hotes min(_time) as premier_evenement max(_time) as dernier_evenement by src_ip, dest_port
       | where nb_hotes>20
       | eval scan_type="horizontal", hotes=mvindex(hotes, 0, 19) ]
+| lookup DM-NET-001_exclusions.csv src_ip OUTPUT exclude
+| where isnull(exclude)
 | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
 | eval rule_id="DM-NET-001"

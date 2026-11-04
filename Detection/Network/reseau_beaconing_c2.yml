@@ -29,7 +29,7 @@ data_requirements:
   audit_policy: Suricata NIDS sur le pare-feu
   collected_on: pare-feu
   verified_in_splunk: false
-  notes: Presence de Suricata, index, sourcetype et champs (src_ip, dest_ip, dest_port, flow.start, flow.bytes_toserver) a verifier sur des donnees reelles. Seuls les flux qui traversent le pare-feu sont visibles.
+  notes: Aucune collecte Suricata dans le lab. Index, sourcetype et champs a confirmer sur des donnees reelles. Seuls les flux qui traversent le pare-feu sont visibles.
 detection:
   selection_flow:
     event_type: flow
@@ -67,7 +67,7 @@ falsepositives:
 - Tailscale
 - Supervision
 exclusions:
-  mechanism: Aucune pour le premier test. Lookup DM-NET-002_exclusions.csv a ajouter une fois les destinations legitimes connues.
+  mechanism: lookup CSV (DM-NET-002_exclusions.csv, colonnes dest_ip,exclude, dans SA-BUILD/lookups)
   entries: []
 known_evasions:
 - Jitter eleve
@@ -82,7 +82,7 @@ design_choice: >
   sont des choix de conception a ajuster apres les tests.
 splunk:
   alert_name: '[BUILD] [HIGH] Beaconing C2 - connexions regulieres vers l''exterieur'
-  app: SA_BUILD
+  app: SA-BUILD
   sharing: app
   index: main
   cron: '0 * * * *'
@@ -104,6 +104,8 @@ splunk:
     | stats count as nb_connexions avg(delta) as intervalle_moyen stdev(delta) as ecart_type avg(flow.bytes_toserver) as octets_envoyes_moyen min(heure_flux) as premier_evenement max(heure_flux) as dernier_evenement by src_ip, dest_ip, dest_port
     | eval cv=round(ecart_type/intervalle_moyen, 3), intervalle_moyen=round(intervalle_moyen, 1), octets_envoyes_moyen=round(octets_envoyes_moyen, 0)
     | where nb_connexions>=12 AND cv<0.15 AND intervalle_moyen>10
+    | lookup DM-NET-002_exclusions.csv dest_ip OUTPUT exclude
+    | where isnull(exclude)
     | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
     | eval rule_id="DM-NET-002"
 response:
@@ -123,13 +125,13 @@ investigation:
   - P-SRC-IP-SCOPE
   client_notification: oui - delais SLA HIGH A_COMPLETER (texte et tableau des slides differents)
 tests:
-- date: ''
-  environment: donnees d'exemple
-  command: Import de eve_flow_synthetique.json dans l'index test_reseau
+- date: 2026/11/04
+  environment: donnees d'exemple (index test_reseau)
+  command: Recherche sur eve_flow_synthetique.json
   expected: Un resultat pour 10.99.0.30 vers 203.0.113.50, rien pour 10.99.0.31 et 10.99.0.32
-  result: non teste
-  evidence: ''
-untestable_reason: 'Collecte Suricata non confirmee dans le lab. Une cible Kali est une IP privee, exclue par la regle: validation sur donnees d''exemple.'
+  result: valide sur donnees d'exemple - 48 connexions, intervalle 300.4 s, cv 0.030, alerte IRIS 147
+  evidence: DM-NET-002_beaconing_c2_resultats.csv
+untestable_reason: 'Aucune collecte Suricata dans le lab (sourcetypes verifies dans Splunk le 2026/11/04): logique validee sur donnees d''exemple dans l''index test_reseau, collecte reelle non verifiee.'
 changelog:
 - date: 2026/11/02
   author: Youssef

@@ -1,6 +1,6 @@
 title: DNS tunneling - volume et longueur anormaux
 id: DM-NET-004
-status: draft
+status: test
 description: >
   Detecte plus de 100 noms uniques avec des sous-domaines longs pour un meme domaine parent
   sur une machine Windows en 10 minutes, a partir de Sysmon 22.
@@ -28,7 +28,7 @@ data_requirements:
   - '22'
   audit_policy: Configuration Sysmon deployee (sysmon-modular)
   collected_on: DC et SRV dans le lab
-  verified_in_splunk: false
+  verified_in_splunk: true
   notes: Verifier que EventCode=22 remonte et que la configuration n'exclut pas le domaine de test ni les requetes en echec.
 detection:
   selection:
@@ -59,7 +59,7 @@ falsepositives:
 - Services cloud
 - Antivirus
 exclusions:
-  mechanism: Aucune pour le premier test. Lookup DM-NET-004_exclusions.csv a ajouter une fois les domaines legitimes connus.
+  mechanism: lookup CSV (DM-NET-004_exclusions.csv, colonnes domain,exclude, dans SA-BUILD/lookups)
   entries: []
 known_evasions:
 - Faible debit
@@ -73,7 +73,7 @@ design_choice: >
   ajuster apres les tests.
 splunk:
   alert_name: '[BUILD] [MEDIUM] DNS tunneling - volume et longueur anormaux'
-  app: SA_BUILD
+  app: SA-BUILD
   sharing: app
   index: main
   cron: '*/10 * * * *'
@@ -95,6 +95,8 @@ splunk:
     | stats dc(requete) as nb_uniques avg(longueur) as longueur_moyenne max(longueur) as longueur_max values(Image) as images min(_time) as premier_evenement max(_time) as dernier_evenement by ComputerName, domain
     | eval longueur_moyenne=round(longueur_moyenne, 1)
     | where nb_uniques>100 AND longueur_moyenne>20
+    | lookup DM-NET-004_exclusions.csv domain OUTPUT exclude
+    | where isnull(exclude)
     | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
     | eval rule_id="DM-NET-004"
 response:
@@ -112,12 +114,12 @@ investigation:
   - P-PROC-TREE
   client_notification: non - qualification sous 8h (SLA MEDIUM)
 tests:
-- date: ''
+- date: 2026/11/04
   environment: lab groupe 2 - SRV
-  command: 150 noms aleatoires de 32 caracteres avec Resolve-DnsName vers tunnel-test.invalid
+  command: '1..150|%{Resolve-DnsName "$(New-Guid).tunnel-test.invalid" -ea 0}'
   expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: valide - 150 noms uniques detectes, alerte IRIS 113
+  evidence: DM-NET-004_dns_tunneling_resultats.csv
 - date: ''
   environment: lab groupe 2 - SRV
   command: 150 noms aleatoires de 15 caracteres avec Resolve-DnsName vers tunnel-test.invalid
@@ -131,4 +133,4 @@ changelog:
   change: Creation (draft)
 - date: 2026/11/04
   author: Youssef
-  change: Test avec Resolve-DnsName, suffixes multi-niveaux, zones arpa, seuils alignes, rule_id, for_each_result
+  change: Test avec Resolve-DnsName, suffixes multi-niveaux, zones arpa, seuils alignes, rule_id, for_each_result, exclusions, resultats de test

@@ -1,0 +1,82 @@
+[
+{
+    "info": {
+        "event": {
+            "name": "execve"
+        },
+        "host": {
+            "name": "linserv-dev"
+        },
+        "task": {
+            "user": "testuser"
+        }
+    },
+    "data": {
+        "command_line": "grep -ri password /home"
+    }
+},
+{
+    "info": {
+        "event": {
+            "name": "execve"
+        },
+        "host": {
+            "name": "linserv-dev"
+        },
+        "task": {
+            "user": "testuser"
+        }
+    },
+    "data": {
+        "command_line": "find / -name id_rsa"
+    }
+},
+{
+    "info": {
+        "event": {
+            "name": "execve"
+        },
+        "host": {
+            "name": "linserv-dev"
+        },
+        "task": {
+            "user": "testuser"
+        }
+    },
+    "data": {
+        "command_line": "trufflehog filesystem /srv"
+    }
+},
+{
+    "info": {
+        "event": {
+            "name": "execve"
+        },
+        "host": {
+            "name": "linserv-dev"
+        },
+        "task": {
+            "user": "testuser"
+        }
+    },
+    "data": {
+        "command_line": "cat /etc/passwd"
+    }
+},
+{
+    "info": {
+        "event": {
+            "name": "execve"
+        },
+        "host": {
+            "name": "linserv-dev"
+        },
+        "task": {
+            "user": "testuser"
+        }
+    },
+    "data": {
+        "command_line": "cd $(pwd)"
+    }
+}
+]

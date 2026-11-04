@@ -1,0 +1,113 @@
+title: Extraction de NTDS.dit
+id: DM-AD-007
+status: test
+description: >
+  Detecte l'extraction de la base NTDS.dit via ntdsutil (IFM), shadow copy, ou copie du fichier.
+author: Groupe 2 - Nathan SACIER
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1003/003/
+tags:
+- attack.credential_access
+- attack.t1003.003
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: Copie de NTDS.dit et SYSTEM via ntdsutil 'ac i ntds' ifm, vssadmin create shadow ou diskshadow.
+  attacker_prerequisites: Droits d'administration sur un DC.
+  environment_prerequisites: DC accessible.
+  complexity: faible
+logsource:
+  product: windows
+  category: process_creation
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  - '11'
+  audit_policy: 'Detailed Tracking / Process Creation : Success and Failure (4688 en complement)'
+  collected_on: DC
+  verified_in_splunk: true
+  notes: 'Verifie en labo (03/11): EventCode 1 journalise ntdsutil/vssadmin/diskshadow sur le DC (branche principale, couvre toutes les techniques reelles). EventCode 11 est actif sur le DC mais son filtre FileCreate ne couvre pas l''extension .dit, donc la branche creation de fichier ntds.dit ne se declenche pas ici. Conservee pour couverture si le filtre evolue.'
+detection:
+  selection_cli:
+    CommandLine|contains:
+    - ntdsutil
+    - ifm
+    - vssadmin create shadow
+    - diskshadow
+    - ntds.dit
+  selection_file:
+    TargetFilename|endswith: ntds.dit
+  condition: selection_cli or selection_file
+fields:
+- ComputerName
+- User
+- Image
+- CommandLine
+- TargetFilename
+level: critical
+severity_rationale: >
+  Vol de tous les hash du domaine. CRITICAL.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Sauvegarde systeme legitime
+- Maintenance de l'AD par les administrateurs
+exclusions:
+  mechanism: lookup CSV des comptes et fenetres de maintenance
+  entries: []
+known_evasions:
+- Utilisation de DCSync (regle DM-AD-005)
+- Copie via un autre outil que ceux listes
+design_choice: >
+  Regle sur la ligne de commande; la creation du fichier ntds.dit est une seconde preuve.
+splunk:
+  alert_name: '[BUILD] [CRITICAL] Extraction de NTDS.dit'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational"
+    ((EventCode=1 (CommandLine="*ntdsutil*" CommandLine="*ifm*") OR (EventCode=1 CommandLine="*vssadmin*" CommandLine="*create*" CommandLine="*shadow*") OR (EventCode=1 CommandLine="*diskshadow*") OR (EventCode=1 CommandLine="*ntds.dit*"))
+    OR (EventCode=11 TargetFilename="*\\ntds.dit"))
+    | table _time ComputerName User Image CommandLine TargetFilename
+response:
+  containment:
+  - Isoler le DC du reste du reseau apres validation du client
+  - Desactiver le compte utilise
+  remediation:
+  - Double reinitialisation de krbtgt
+  - Rotation de tous les mots de passe du domaine
+  do_not:
+  - 'Ne pas eteindre le DC sans consigne: risque de perte de preuves'
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-007.md
+  pivots:
+  - P-PROC-TREE
+  - P-LOGON-SESSION
+  - P-PERSISTENCE
+  client_notification: oui - notification client sous 2h (SLA CRITICAL), qualification sous 4h
+tests:
+- date: '2026/11/03'
+  environment: lab DC (192.168.20.100)
+  command: 'Validation de la logique par proxy benin (sans extraction reelle de l''annuaire) : EventCode 1 via "cmd /c echo ntdsutil ac i ntds ifm create full C:\temp\ifm"'
+  expected: Branche ligne de commande declenchee
+  result: 'OK - la branche EventCode 1 (ntdsutil + ifm) remonte sur le DC. Branche EventCode 11 (fichier ntds.dit) non declenchee : le filtre FileCreate de sysmon-modular ne couvre pas l''extension .dit dans cet environnement (voir data_requirements.notes).'
+  evidence: Tests/validation_environnement/DM-AD-007/
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Nathan SACIER
+  change: Creation (draft)

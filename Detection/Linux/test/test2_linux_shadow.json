@@ -1,0 +1,597 @@
+[
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:01",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "/usr/bin/cat /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:02",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "sudo cat /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:03",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cp /etc/shadow /tmp/s.bak"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:04",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "less /etc/shadow-"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:05",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/gshadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:06",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc//shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:07",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/./shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:08",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/sha*"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:09",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/s?adow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:10",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/sh[a-z]dow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:11",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:12",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "head -n 5 shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:13",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "grep root /var/backups/shadow.bak"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:14",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "tar czf /tmp/x.tgz /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:15",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "unshadow /etc/passwd /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:16",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "john --wordlist=/usr/share/wordlists/rockyou.txt shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:17",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "dd if=/etc/shadow of=/tmp/s"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:18",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/s*"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:19",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "CAT /ETC/SHADOW"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:20",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "ls /etc/sh*"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:21",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/shadowsocks/config.json"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:22",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "svc_audit"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:23",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/passwd"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:24",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "ls -la /etc"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:25",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/ssh/sshd_config"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:26",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat shadow_notes.txt"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:27",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "echo shadow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:28",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/hostname"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:29",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "vim /home/bob/todo.txt"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:30",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cd $(pwd)"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:31",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:32",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/sha\"\"dow"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:33",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "cat /etc/*"
+        }
+    },
+    {
+        "timestamp": "2026-11-04T10:00:34",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
+        },
+        "data": {
+            "command_line": "python3 -c \"print(open('/etc/sh'+'adow').read())\""
+        }
+    }
+]

@@ -1,23 +1,64 @@
-# DM-AD-004 - Password spraying (MEDIUM)
+# DM-AD-004 – Password spraying
 
-ATT&CK : T1110.003 | Auteur : Amelie Sauvan-Magnet
+| Champ | Valeur |
+|---|---|
+| ID | DM-AD-004 |
+| Nom de l'alerte Splunk | [BUILD] [MEDIUM] Password spraying |
+| Sévérité | Medium |
+| MITRE ATT&CK | T1110.003 – Password Spraying |
+| Statut | Validée de bout en bout (Splunk vers DFIR-IRIS) |
 
-## Ce que l'alerte veut dire
-Une meme source a echoue a se connecter sur beaucoup de comptes differents en peu de
-temps, avec peu d'essais par compte : signature d'un spray de mot de passe.
+## Description
 
-## A verifier en premier (triage)
-- Quelle IP source, et combien de comptes distincts vises ?
-- Un de ces comptes a-t-il fini par reussir (4624 depuis la meme IP juste apres) ?
-- La source est-elle interne (poste compromis) ou externe ?
+Détecte une même source réseau qui échoue à s'authentifier sur de nombreux comptes différents en peu de temps. Lors des tests, la règle a détecté un spray lancé depuis la Kali (192.168.20.200) visant 8 comptes du domaine avec un seul mot de passe, soit 14 échecs regroupés.
 
-## Pivots d'investigation
-- Succes depuis la meme IP : index=main source="WinEventLog:Security" EventCode=4624 Source_Network_Address="<ip>" | stats values(Account_Name) by _time
-- Comptes vises : index=main EventCode IN (4625,4771,4776) Source_Network_Address="<ip>" | stats dc(Account_Name)
+## Requête SPL
 
-## Faux positif probable si
-- Appli / compte de service mal configure qui rejoue un vieux mot de passe. A exclure par compte source.
+    index=main source="WinEventLog:Security" EventCode=4625
+    | stats dc(Account_Name) as nb_comptes values(Account_Name) as comptes count as nb_echecs by Source_Network_Address, host
+    | where nb_comptes >= 5
+    | sort - nb_comptes
 
-## Si c'est confirme
-- Endiguement : bloquer l'IP source, reset des comptes ou un 4624 a suivi.
-- Notification client : SLA MEDIUM -> qualification sous 8h.
+## Paramètres de l'alerte
+
+| Champ | Valeur |
+|---|---|
+| Permissions | Shared in App |
+| Alert type | Scheduled, */5 * * * * |
+| Time Range | earliest=-15m, latest=now |
+| Trigger | Number of Results > 0, Once |
+| Action | Webhook vers http://soc_n8n:5678/webhook/alert |
+
+## Logique de détection
+
+On regroupe les échecs d'authentification (EventCode 4625) par IP source sur une fenêtre de 15 minutes. Le seuil porte sur le nombre de comptes DISTINCTS visés (dc(Account_Name) superieur ou egal a 5), et non sur le nombre d'essais. C'est ce qui distingue le password spraying d'un brute force classique.
+
+## Fiche réflexe
+
+### Triage en 5 questions
+
+1. Quelle IP source, et combien de comptes distincts visés ?
+2. Un de ces comptes a-t-il fini par réussir (4624 depuis la même IP juste après) ? Si oui, la sévérité monte fortement.
+3. La source est-elle interne (poste compromis) ou externe ?
+4. Les comptes visés sont-ils des comptes réels du domaine (liste cohérente = reconnaissance préalable) ?
+5. L'attaque est-elle isolée ou suivie d'autres actions depuis la même IP ?
+
+### Faux positifs fréquents
+
+- Scanner de vulnérabilités ou outil de supervision.
+- Compte de service mal configuré qui rejoue un ancien mot de passe (à exclure par IP source).
+
+### Actions
+
+- Bloquer l'IP source.
+- Surveiller les comptes visés, forcer le reset de tout compte où un 4624 a suivi.
+- Qualification sous 8h (SLA Medium).
+
+## Test de validation (lab)
+
+Spray lancé depuis la Kali avec crackmapexec (un mot de passe sur 6 comptes du domaine). Résultat : une ligne regroupée (IP 192.168.20.200, 8 comptes visés), alerte reçue dans DFIR-IRIS. Preuve : Tests/validation_environnement/DM-AD-004.csv et captures/DM-AD-004.png.
+
+## Limites et écarts conception / implémentation
+
+- Un spraying très lent (moins de 5 comptes par fenêtre de 15 min) ou réparti sur plusieurs IP sources passe sous le seuil. Angle mort assumé à surveiller en RUN.
+- Le champ Account_Name d'un 4625 peut être multivaleur (compte visé + compte système) : à vérifier si le comptage de comptes distincts semble gonflé.

@@ -1,8 +1,0 @@
-# DM-AD-008 - Delegation Kerberos
-# Nom alerte : [BUILD] [HIGH] Delegation Kerberos
-# App SA_BUILD / cron */5 * * * * / webhook n8n
-# Logique : modification d'un attribut de delegation sur un objet AD (evenement 5136)
-
-index=main source="WinEventLog:Security" EventCode=5136
-  (AttributeLDAPDisplayName="msDS-AllowedToDelegateTo" OR AttributeLDAPDisplayName="msDS-AllowedToActOnBehalfOfOtherIdentity")
-| table _time ComputerName SubjectUserName ObjectDN AttributeLDAPDisplayName AttributeValue

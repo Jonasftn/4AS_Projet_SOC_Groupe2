@@ -25,7 +25,7 @@ description: >
   Detecte plusieurs commandes de decouverte distinctes lancees en peu de temps par un meme utilisateur.
 author: Groupe 2 - Killian MUNT-BURON
 date: 2026/11/02
-modified: 2026/11/03
+modified: 2026/11/04
 references:
 - https://attack.mitre.org/techniques/T1082/
 - https://attack.mitre.org/techniques/T1033/
@@ -67,7 +67,7 @@ data_requirements:
   audit_policy: Collecte Kunai
   collected_on: serveurs Linux
   verified_in_splunk: false
-  notes: Champs Kunai a verifier sur des donnees reelles. Le champ cmd (premier mot de data.command_line, sans chemin) est calcule dans le SPL, pas fourni par Kunai.
+  notes: Champs Kunai a verifier sur des donnees reelles. Les champs cmd (premier mot de data.command_line, sans chemin), cl, srv et usr sont calcules dans le SPL, pas fournis par Kunai. Sur un sourcetype _json, spath duplique les champs deja extraits (valeurs multiples), donc le SPL garde la premiere valeur avec mvindex.
 fields:
 - info.host.name
 - info.task.user
@@ -109,11 +109,13 @@ splunk:
   search: |
     index=main sourcetype=*kunai* | spath
     | search info.event.name="execve"
-    | eval cmd=replace(mvindex(split('data.command_line', " "), 0), "^.*/", "")
+    | eval cl=mvindex('data.command_line', 0), srv=mvindex('info.host.name', 0), usr=mvindex('info.task.user', 0)
+    | eval cmd=replace(mvindex(split(cl, " "), 0), "^.*/", "")
     | where cmd IN ("id","whoami","uname","hostname","ip","ss","ps","w","who","crontab","getent","lsblk","arp","groups")
-    | lookup DM-LIN-001_exclusions.csv user AS info.task.user OUTPUT exclude
+    | lookup DM-LIN-001_exclusions.csv user AS usr OUTPUT exclude
     | where isnull(exclude)
-    | stats dc(cmd) as nb_cmd values('data.command_line') as commandes earliest(_time) as _time by info.host.name, info.task.user
+    | stats dc(cmd) as nb_cmd values(cl) as commandes earliest(_time) as _time by srv, usr
+    | rename srv AS "info.host.name", usr AS "info.task.user"
     | where nb_cmd>=6
     | table _time info.host.name info.task.user nb_cmd commandes
 response:
@@ -149,3 +151,6 @@ changelog:
 - date: 2026/11/02
   author: Killian MUNT-BURON
   change: Creation (draft)
+- date: 2026/11/04
+  author: Killian MUNT-BURON
+  change: SPL adapte aux champs multivalues (spath sur sourcetype _json), champs calcules cl, srv et usr, rename des champs en sortie

@@ -1,82 +1,87 @@
 [
-{
-    "info": {
-        "event": {
-            "name": "execve"
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
         },
-        "host": {
-            "name": "linserv-dev"
-        },
-        "task": {
-            "user": "testuser"
+        "data": {
+            "command_line": "grep -ri password /home"
         }
     },
-    "data": {
-        "command_line": "grep -ri password /home"
-    }
-},
-{
-    "info": {
-        "event": {
-            "name": "execve"
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
         },
-        "host": {
-            "name": "linserv-dev"
-        },
-        "task": {
-            "user": "testuser"
+        "data": {
+            "command_line": "find / -name id_rsa"
         }
     },
-    "data": {
-        "command_line": "find / -name id_rsa"
-    }
-},
-{
-    "info": {
-        "event": {
-            "name": "execve"
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
         },
-        "host": {
-            "name": "linserv-dev"
-        },
-        "task": {
-            "user": "testuser"
+        "data": {
+            "command_line": "trufflehog filesystem /srv"
         }
     },
-    "data": {
-        "command_line": "trufflehog filesystem /srv"
-    }
-},
-{
-    "info": {
-        "event": {
-            "name": "execve"
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
         },
-        "host": {
-            "name": "linserv-dev"
-        },
-        "task": {
-            "user": "testuser"
+        "data": {
+            "command_line": "cat /etc/passwd"
         }
     },
-    "data": {
-        "command_line": "cat /etc/passwd"
-    }
-},
-{
-    "info": {
-        "event": {
-            "name": "execve"
+    {
+        "timestamp": "2026-11-04T10:00:00",
+        "info": {
+            "event": {
+                "name": "execve"
+            },
+            "host": {
+                "name": "linserv-dev"
+            },
+            "task": {
+                "user": "testuser"
+            }
         },
-        "host": {
-            "name": "linserv-dev"
-        },
-        "task": {
-            "user": "testuser"
+        "data": {
+            "command_line": "cd $(pwd)"
         }
-    },
-    "data": {
-        "command_line": "cd $(pwd)"
     }
-}
 ]

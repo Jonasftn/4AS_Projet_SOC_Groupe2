@@ -1,0 +1,124 @@
+title: Dump de la memoire LSASS
+id: DM-WIN-004
+status: test
+description: >
+  Detecte l'acces a la memoire de lsass.exe (Sysmon 10), les commandes de dump (comsvcs MiniDump, procdump) et la creation de fichiers dump.
+author: Groupe 2 - Nathan SACIER
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1003/001/
+tags:
+- attack.credential_access
+- attack.t1003.001
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: Lecture de la memoire LSASS pour extraire hash et tickets, puis parsing hors ligne ou en memoire.
+  attacker_prerequisites: Privileges SeDebug (administrateur local).
+  environment_prerequisites: LSASS sans PPL/Credential Guard.
+  complexity: faible
+logsource:
+  product: windows
+  category: process_access
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  - '10'
+  - '11'
+  audit_policy: Module 10_process_access de sysmon-modular
+  collected_on: tous
+  verified_in_splunk: true
+  notes: 'LIMITE CONFIRMEE EN LABO (03/11): EventCode 10 (ProcessAccess) ne cible PAS lsass.exe dans la config Sysmon de cet environnement, donc la branche acces memoire ne remonte rien. Detection assuree par EventCode 1 (ligne de commande comsvcs/MiniDump/procdump) et EventCode 11 (creation de fichier *lsass*.dmp), tous deux verifies. La branche EventCode 10 est conservee au cas ou ProcessAccess serait active plus tard.'
+detection:
+  selection_access:
+    EventID: 10
+    TargetImage|endswith: \lsass.exe
+    GrantedAccess:
+    - '0x1010'
+    - '0x1410'
+    - '0x1438'
+    - '0x143a'
+    - '0x1fffff'
+  filter_exclusions:
+    SourceImage|endswith:
+    - \MsMpEng.exe
+    - \WerFault.exe
+  selection_cli:
+    EventID: 1
+    CommandLine|contains:
+    - comsvcs
+    - MiniDump
+  condition: (selection_access and not filter_exclusions) or selection_cli
+fields:
+- ComputerName
+- EventCode
+- SourceImage
+- GrantedAccess
+- CommandLine
+level: critical
+severity_rationale: >
+  Vol d'identifiants en memoire; CRITICAL.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- EDR et antivirus
+- WerFault
+exclusions:
+  mechanism: filtre sur les SourceImage legitimes (chemin exact)
+  entries: []
+known_evasions:
+- Dump via drivers ou techniques sans OpenProcess classique
+- Acces avec un GrantedAccess non liste
+design_choice: >
+  Trois traces (acces, ligne de commande, fichier) pour limiter les faux negatifs.
+splunk:
+  alert_name: '[BUILD] [CRITICAL] Dump de la memoire LSASS'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational"
+    ((EventCode=10 TargetImage="*\\lsass.exe" GrantedAccess IN ("0x1010","0x1410","0x1438","0x143a","0x1fffff") NOT SourceImage IN ("*\\MsMpEng.exe","*\\WerFault.exe"))
+    OR (EventCode=1 (CommandLine="*comsvcs*MiniDump*" OR CommandLine="*procdump*lsass*" OR CommandLine="*-ma*lsass*"))
+    OR (EventCode=11 TargetFilename="*lsass*.dmp"))
+    | table _time ComputerName EventCode SourceImage Image GrantedAccess CommandLine TargetFilename
+response:
+  containment:
+  - Isoler l'hote
+  - Invalider les sessions des comptes connectes a l'hote
+  remediation:
+  - Reinitialiser les mots de passe des comptes exposes
+  - Activer Credential Guard et LSASS PPL
+  do_not:
+  - 'Ne pas eteindre l''hote: perte de la memoire'
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-004.md
+  pivots:
+  - P-PROC-TREE
+  - P-LOGON-SESSION
+  - P-USER-LOGONS
+  client_notification: oui - notification client sous 2h (SLA CRITICAL), qualification sous 4h
+tests:
+- date: '2026/11/03'
+  environment: lab SRV (192.168.20.101)
+  command: 'Validation de la logique de detection par proxys benins (sans dump reel de secrets) : EventCode 1 via "cmd /c echo rundll32 comsvcs.dll MiniDump ... lsass_test.dmp" et EventCode 11 via creation de C:\Windows\Temp\lsass_build_test.dmp'
+  expected: Branches EventCode 1 et 11 declenchees
+  result: 'OK - les deux branches remontent. EventCode 10 (ProcessAccess vers lsass) NON collecte dans cet environnement (voir data_requirements.notes).'
+  evidence: Tests/validation_environnement/DM-WIN-004/
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Nathan SACIER
+  change: Creation (draft)

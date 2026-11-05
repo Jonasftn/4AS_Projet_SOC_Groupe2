@@ -1,0 +1,16 @@
+"rule_id","severity_hint","_time","Account_Name",DN,Class,Type,ComputerName
+"DM-AD-003",HIGH,"2026-11-05T13:34:49.000+0000","attacker_test","CN=victim_test,OU=Test,DC=test,DC=local",user,"Information
+Active Directory Domain Services
+Value Added","DC.test.local"
+"DM-AD-003",HIGH,"2026-11-05T13:34:49.000+0000","attacker_test","CN=victim_test,OU=Test,DC=test,DC=local",user,"Information
+Active Directory Domain Services
+Value Added","DC.test.local"
+"DM-AD-003",HIGH,"2026-11-05T13:34:49.000+0000","attacker_test","CN=victim_test,OU=Test,DC=test,DC=local",user,"Information
+Active Directory Domain Services
+Value Added","DC.test.local"
+"DM-AD-003",HIGH,"2026-11-05T13:30:29.000+0000","attacker_test","CN=victim_test,OU=Test,DC=test,DC=local",user,"Information
+Active Directory Domain Services
+Value Added","DC.test.local"
+"DM-AD-003",HIGH,"2026-11-05T13:30:29.000+0000","attacker_test","CN=victim_test,OU=Test,DC=test,DC=local",user,"Information
+Active Directory Domain Services
+Value Added","DC.test.local"

@@ -1,0 +1,2 @@
+ComputerName,LogonId,images,commandes,user
+"SRV.test.local",0x317F13,"C:\Windows\System32\cmd.exe","cmd.exe /c whoami > C:\Windows\Temp\out.txt","NOT_TRANSLATED TEST\Administrator"

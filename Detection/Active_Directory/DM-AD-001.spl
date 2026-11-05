@@ -1,0 +1,11 @@
+index=main source="WinEventLog:Security" EventCode=4769 Ticket_Encryption_Type=0x17 Failure_Code=0x0
+    NOT Service_Name="*$" NOT Service_Name="krbtgt" NOT Account_Name="*$@*"
+| eval src_ip=replace(Client_Address, "^::ffff:", ""), account=lower(mvindex(Account_Name, 0))
+``` Exclusions : decommenter une fois le lookup dm_ad_001_exclusions.csv (account,src_ip,comment) cree ```
+``` | lookup dm_ad_001_exclusions.csv account OUTPUT comment as excl_account | lookup dm_ad_001_exclusions.csv src_ip OUTPUT comment as excl_ip | where isnull(excl_account) AND isnull(excl_ip) ```
+| stats dc(Service_Name) as nb_spn values(Service_Name) as spn count as nb_tickets min(_time) as first_seen max(_time) as last_seen by account, src_ip, ComputerName
+| eval severity_hint=if(nb_spn>=3, "HIGH", "MEDIUM"),
+       rule_id="DM-AD-001",
+       first_seen=strftime(first_seen, "%Y-%m-%d %H:%M:%S"),
+       last_seen=strftime(last_seen, "%Y-%m-%d %H:%M:%S")
+| table rule_id severity_hint account src_ip ComputerName nb_spn nb_tickets spn first_seen last_seen

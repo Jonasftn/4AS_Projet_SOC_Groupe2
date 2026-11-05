@@ -1,0 +1,11 @@
+index=main source="WinEventLog:Security" EventCode=4768 Pre_Authentication_Type=0 Result_Code=0x0
+    NOT Account_Name="*$"
+| eval src_ip=replace(Client_Address, "^::ffff:", ""), account=lower(mvindex(Account_Name, 0))
+``` Exclusions : decommenter une fois le lookup dm_ad_002_exclusions.csv (account,src_ip,comment) cree ```
+``` | lookup dm_ad_002_exclusions.csv account OUTPUT comment as excl_account | lookup dm_ad_002_exclusions.csv src_ip OUTPUT comment as excl_ip | where isnull(excl_account) AND isnull(excl_ip) ```
+| stats dc(account) as nb_comptes values(account) as comptes values(Ticket_Encryption_Type) as enc_types count as nb_tgt min(_time) as first_seen max(_time) as last_seen by src_ip, ComputerName
+| eval severity_hint=if(nb_comptes>=2, "HIGH", "MEDIUM"),
+       rule_id="DM-AD-002",
+       first_seen=strftime(first_seen, "%Y-%m-%d %H:%M:%S"),
+       last_seen=strftime(last_seen, "%Y-%m-%d %H:%M:%S")
+| table rule_id severity_hint src_ip ComputerName nb_comptes comptes enc_types nb_tgt first_seen last_seen

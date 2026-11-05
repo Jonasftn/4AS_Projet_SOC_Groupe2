@@ -1,0 +1,156 @@
+title: Shadow Credentials - modification de msDS-KeyCredentialLink
+id: DM-AD-003
+status: draft
+description: >
+  Detecte l'ajout d'une valeur sur l'attribut msDS-KeyCredentialLink d'un objet utilisateur
+  ou ordinateur (evenement 5136), utilise pour implanter une cle publique attaquant et
+  s'authentifier sans mot de passe via PKINIT (Shadow Credentials), avec recuperation
+  possible du hash NT via S4U2Self.
+author: Groupe 2 - Tim LEVADOUX
+date: 2026/11/04
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1556/
+- https://posts.specterops.io/shadow-credentials-abusing-key-trust-account-mapping-for-takeover-8ee1a53566ab
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5136
+tags:
+- attack.persistence
+- attack.credential_access
+- attack.t1556
+killchain: Acces aux identifiants / Persistance
+attack_summary:
+  mechanism: >
+    L'attaquant ecrit une cle publique dans msDS-KeyCredentialLink de la victime (droit
+    GenericWrite/GenericAll ou WriteProperty sur cet attribut suffit, pas besoin du mot
+    de passe). Il s'authentifie ensuite en PKINIT avec la cle privee correspondante et
+    peut recuperer le hash NT de la victime via S4U2Self (ex. avec Rubeus /getnthash).
+  attacker_prerequisites: >
+    Droit d'ecriture sur l'attribut msDS-KeyCredentialLink de l'objet cible (GenericWrite,
+    GenericAll, WriteProperty sur cet attribut, ou appartenance a un groupe avec delegation).
+  environment_prerequisites: >
+    Domaine fonctionnel Windows Server 2016+ (support PKINIT/Shadow Credentials), au moins
+    une mauvaise delegation ACL sur un objet utilisateur ou ordinateur.
+  complexity: moyenne
+logsource:
+  product: windows
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '5136'
+  audit_policy: 'Audit Directory Service Changes : Success'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: >
+    Necessite la sous-categorie d'audit "Directory Service Changes" activee sur le DC
+    (auditpol /set /subcategory:"Directory Service Changes" /success:enable). La SACL
+    par defaut des objets AD (depuis Server 2008) couvre en general les modifications
+    d'attributs pour "Everyone" une fois la sous-categorie activee, sans configuration
+    ACL supplementaire. Noms de champs attendus avec le TA Windows : ObjectDN, ObjectClass,
+    AttributeLDAPDisplayName, AttributeValue, OperationType, SubjectUserName, DSName.
+    A confirmer dans Splunk avant livraison.
+detection:
+  selection:
+    EventID: 5136
+    AttributeLDAPDisplayName: msDS-KeyCredentialLink
+    OperationType: '%%14674'
+  filter_sync_accounts:
+    SubjectUserName|startswith:
+    - 'MSOL_'
+    - 'AAD_'
+    - 'ADSync'
+  condition: selection and not filter_sync_accounts
+fields:
+- SubjectUserName
+- ObjectDN
+- ObjectClass
+- OperationType
+- DSName
+level: high
+severity_rationale: >
+  Technique de persistance/contournement de l'authentification tres discrete : aucun mot
+  de passe modifie, aucun evenement de reinitialisation. Un seul evenement suffit a accorder
+  un acces equivalent au vol du compte. HIGH des le premier evenement valide.
+severity_modifiers:
+- +1 si l'objet cible (ObjectClass=user) est un compte privilegie ou membre d'un groupe
+  critique (cf. DM-AD-006)
+- +1 si l'objet cible est un controleur de domaine ou un compte de service a privileges
+- +1 si un 4768 PKINIT inhabituel est observe sur le compte cible peu apres l'ajout
+falsepositives:
+- 'Azure AD Connect / Azure AD hybrid join : ecrit legitimement msDS-KeyCredentialLink sur les objets ordinateur (cles de peripherique) a chaque inscription hybride. Tres frequent en environnement hybride, generalement exclu par SubjectUserName du compte de sync.'
+- Solutions PAM ou de gestion de certificats qui provisionnent des cles d'authentification
+exclusions:
+  mechanism: lookup CSV des comptes de service legitimes (sync AAD, PAM) + filtre dans la requete
+  lookup_file: dm_ad_003_exclusions.csv
+  lookup_columns: account,comment
+  entries: []
+known_evasions:
+- Ajout suivi d'une suppression rapide de la valeur (toujours journalise en deux evenements
+  5136 distincts, Value Added puis Value Deleted)
+- Utilisation d'un compte de service legitime deja exclu (sync AAD compromis)
+- Modification via un outil qui imite le comportement d'Azure AD Connect
+design_choice: >
+  Seuil au premier evenement (pas d'agregation) : la technique n'a besoin que d'un seul
+  ajout pour etre efficace, contrairement au Kerberoasting qui beneficie d'un comptage.
+  Le filtre se limite aux comptes de synchronisation connus ; le bruit residuel attendu
+  est faible car peu d'acteurs ecrivent normalement sur cet attribut.
+splunk:
+  alert_name: '[BUILD] [HIGH] Shadow Credentials - modification de msDS-KeyCredentialLink'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for each result
+  throttle:
+    fields: SubjectUserName,ObjectDN
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  severity_field: severity_hint
+  search_file: DM-AD-003.spl
+response:
+  containment:
+  - Supprimer immediatement la valeur ajoutee sur msDS-KeyCredentialLink de l'objet cible
+    (ex. avec Whisker.exe remove, pywhisker --action remove, ou ADSI Edit)
+  - Reinitialiser le mot de passe du compte cible (par precaution, au cas ou le hash NT
+    aurait deja ete recupere via S4U2Self)
+  - Isoler le poste source et desactiver le compte attaquant si la modification n'est pas legitime
+  remediation:
+  - Revoir les delegations ACL (GenericWrite, GenericAll, WriteProperty) sur les objets
+    utilisateur et ordinateur, notamment via BloodHound
+  - Restreindre les groupes ayant un droit d'ecriture sur msDS-KeyCredentialLink au strict
+    necessaire (idealement uniquement les comptes de sync AAD sur les objets ordinateur)
+  - Verifier l'absence d'autres cles residuelles sur les comptes a privileges
+  do_not:
+  - 'Ne pas se contenter de reinitialiser le mot de passe sans supprimer la cle : la cle seule permet toujours l''authentification PKINIT independamment du mot de passe'
+  - Ne pas fermer le case sans verifier l'origine du droit d'ecriture (ACL mal configuree)
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-003.md
+  pivots:
+  - P-USER-LOGONS
+  - P-SRC-IP-SCOPE
+  - P-PROC-TREE
+  - P-PKINIT-AUTH
+  client_notification: oui - alerte HIGH, notification immediate
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  setup: >
+    Creer un utilisateur de test victim_test. Accorder au compte attacker_test un droit
+    WriteProperty sur msDS-KeyCredentialLink de victim_test :
+    dsacls "CN=victim_test,OU=Test,DC=test,DC=local" /G "TEST\attacker_test:WP;msDS-KeyCredentialLink"
+  command: >
+    pywhisker -d test.local -u attacker_test -p <pass> --target victim_test --action add
+  expected: >
+    5136 avec AttributeLDAPDisplayName=msDS-KeyCredentialLink, OperationType=%%14674,
+    SubjectUserName=attacker_test, ObjectDN=CN=victim_test,...; alerte HIGH dans Splunk
+    puis case DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/04
+  author: Tim LEVADOUX
+  change: Creation (draft)

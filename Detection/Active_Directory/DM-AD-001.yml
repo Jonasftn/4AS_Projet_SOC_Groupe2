@@ -1,0 +1,132 @@
+title: Kerberoasting - demande de tickets de service en RC4
+id: DM-AD-001
+status: draft
+description: >
+  Detecte la demande reussie de tickets de service Kerberos (4769) chiffres en RC4 (0x17)
+  pour des SPN portes par des comptes utilisateurs (hors comptes machine et krbtgt),
+  emise par un compte non machine. Signe typique d'un Kerberoasting en vue d'un cassage hors ligne.
+author: Groupe 2 - Tim LEVADOUX
+date: 2026/11/02
+modified: 2026/11/03
+references:
+- https://attack.mitre.org/techniques/T1558/003/
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769
+tags:
+- attack.credential_access
+- attack.t1558.003
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: Un compte du domaine demande des tickets TGS pour des SPN de comptes de service; la partie chiffree avec le hash du compte de service est cassee hors ligne.
+  attacker_prerequisites: Un compte de domaine valide (mot de passe, hash ou ticket) et un acces LDAP/Kerberos au DC.
+  environment_prerequisites: Comptes de service utilisateurs avec SPN et chiffrement RC4 autorise sur le DC et sur le compte.
+  complexity: faible
+logsource:
+  product: windows
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4769'
+  audit_policy: 'Audit Kerberos Service Ticket Operations : Success and Failure'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: >
+    Evenement produit par le DC uniquement. Noms de champs attendus avec le TA Windows :
+    Ticket_Encryption_Type, Failure_Code, Service_Name, Account_Name (format user@DOMAINE), Client_Address.
+    A confirmer dans Splunk avant livraison.
+detection:
+  selection:
+    EventID: 4769
+    TicketEncryptionType: '0x17'
+    Status: '0x0'
+  filter_service_machine_krbtgt:
+  - ServiceName|endswith: '$'
+  - ServiceName: krbtgt
+  filter_requester_machine:
+    TargetUserName|contains: '$@'
+  condition: selection and not 1 of filter_*
+fields:
+- TargetUserName
+- ServiceName
+- IpAddress
+- TicketEncryptionType
+- TicketOptions
+level: medium
+severity_rationale: >
+  Credential access sans impact immediat mais prepare une elevation. MEDIUM pour une demande isolee;
+  releve a HIGH si au moins 3 SPN distincts sont demandes par le meme compte depuis la meme IP dans la fenetre.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si un SPN cible appartient a un compte de service privilegie (Admins du domaine, etc.)
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Applications anciennes qui exigent RC4
+- Outils d'inventaire ou de supervision interrogeant les SPN
+- Clients non joints au domaine ou systemes non Windows (Linux, appliances) negociant RC4
+exclusions:
+  mechanism: lookup CSV (comptes de service legitimes, IP de supervision) + filtre dans la requete
+  lookup_file: dm_ad_001_exclusions.csv
+  lookup_columns: account,src_ip,comment
+  entries: []
+known_evasions:
+- Tickets demandes en AES (le filtre RC4 ne les voit pas)
+- Ciblage d'un seul SPN ou demandes etalees dans le temps (reste en MEDIUM, ne monte jamais en HIGH)
+- Demande depuis un compte machine compromis (exclu par filter_requester_machine)
+- Ticket deja present en cache (pas de nouvel evenement 4769)
+design_choice: >
+  Seuil volontairement bas (1 SPN) dans un parc de 150 utilisateurs; la montee en HIGH se fait via le nombre
+  de SPN distincts par compte et IP sur la fenetre de 5 minutes. Les demandes en echec (ex. 0xE etype non supporte)
+  ne sont pas couvertes ici.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Kerberoasting - demande de tickets de service en RC4'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for each result
+  throttle:
+    fields: account,src_ip
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  severity_field: severity_hint
+  search_file: DM-AD-001.spl
+response:
+  containment:
+  - Isoler le poste source du reseau (ou bloquer son acces au DC)
+  - Desactiver temporairement le compte demandeur si la demande n'est pas legitime
+  - Reinitialiser le mot de passe des comptes de service cibles (deux fois s'ils sont privilegies)
+  remediation:
+  - Mots de passe longs (25+ caracteres) et aleatoires ou gMSA pour les comptes de service
+  - Forcer AES (msDS-SupportedEncryptionTypes) et desactiver RC4 sur le domaine
+  - Retirer les SPN inutiles et les droits privilegies des comptes de service
+  do_not:
+  - Ne pas reinitialiser le compte avant d'avoir identifie la machine source
+  - Ne pas supprimer les SPN en production sans valider avec le proprietaire applicatif
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-001.md
+  pivots:
+  - P-USER-LOGONS
+  - P-SRC-IP-SCOPE
+  - P-PROC-TREE
+  client_notification: non - qualification sous 8h (SLA MEDIUM); oui si HIGH ou compte de service privilegie cible
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  setup: setspn -S HTTP/srv.test.local TEST\svc_web (compte utilisateur svc_web avec RC4 autorise)
+  command: impacket-GetUserSPNs test.local/<user>:<pass> -dc-ip 192.168.10.100 -request
+  expected: 4769 avec Ticket_Encryption_Type=0x17 et Failure_Code=0x0, alerte MEDIUM dans Splunk puis case DFIR-IRIS (HIGH si 3 SPN ou plus)
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Tim LEVADOUX
+  change: Creation (draft)
+- date: 2026/11/03
+  author: Tim LEVADOUX
+  change: >
+    Revue - logsource conforme Sigma, exclusion krbtgt exacte, exclusion des demandeurs machine,
+    fields aux noms Sigma, lookup d'exclusion integre a la SPL, trigger par resultat, prerequis de test.

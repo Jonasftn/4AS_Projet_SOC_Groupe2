@@ -1,0 +1,121 @@
+title: Creation d'un service suspect
+id: DM-WIN-002
+status: test
+description: >
+  Detecte la creation d'un service (7045, 4697) dont le binaire passe par un interpreteur, un dossier temporaire ou un partage administratif.
+author: Groupe 2 - Jonas FONTAINE-DEMAY
+date: 2026/11/02
+modified: 2026/11/05
+references:
+- https://attack.mitre.org/techniques/T1543/003/
+tags:
+- attack.persistence
+- attack.t1543.003
+killchain: Persistance / mouvement lateral
+attack_summary:
+  mechanism: Installation d'un service pour executer du code avec les droits SYSTEM (PsExec, smbexec, sc create).
+  attacker_prerequisites: Droits administrateur local.
+  environment_prerequisites: Service Control Manager accessible a distance.
+  complexity: faible
+logsource:
+  product: windows
+  category: service_creation
+  service: system
+data_requirements:
+- source: WinEventLog:System
+  event_ids:
+  - '7045'
+  audit_policy: Journal System collecte
+  collected_on: tous
+  verified_in_splunk: false
+  notes: Valide en labo
+- source: WinEventLog:Security
+  event_ids:
+  - '4697'
+  audit_policy: 'Audit Security System Extension : Success and Failure'
+  collected_on: tous
+  verified_in_splunk: false
+  notes: Verifier Service_File_Name
+detection:
+  selection:
+    EventID:
+    - 7045
+    - 4697
+    ServiceFileName|contains:
+    - '%COMSPEC%'
+    - cmd.exe
+    - powershell
+    - \\127.0.0.1\
+    - \Temp\
+    - \AppData\
+  condition: selection
+fields:
+- ComputerName
+- Service_Name
+- svc_path
+- Service_Account
+level: high
+severity_rationale: >
+  Execution SYSTEM et lateral movement. HIGH.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Installation de logiciels legitimes
+exclusions:
+  mechanism: lookup CSV des chemins et editeurs connus
+  entries: []
+known_evasions:
+- Binaire place dans un dossier non surveille avec un nom banal
+design_choice: >
+  Motifs cibles sur les outils Impacket (smbexec, psexec) et dossiers inscriptibles.
+splunk:
+  alert_name: '[BUILD] [HIGH] Creation d''un service suspect'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,Service_Name
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main ((source="WinEventLog:System" EventCode=7045) OR (source="WinEventLog:Security" EventCode=4697))
+    | eval svc_path=Service_File_Name
+    | where match(svc_path, "(?i)(%COMSPEC%|cmd(\.exe)?\s+/c|powershell|\\\\\\\\127\.0\.0\.1\\\\|\\\\ADMIN\$|\\\\Temp\\\\|\\\\AppData\\\\|\\\\Users\\\\Public|\\\\Windows\\\\[A-Za-z]{8}\.exe)")
+    | table _time ComputerName Service_Name svc_path Service_Account
+response:
+  containment:
+  - Arreter et desactiver le service
+  - Isoler l'hote
+  remediation:
+  - Supprimer le service et le binaire
+  - Reinitialiser le compte utilise
+  do_not:
+  - Ne pas redemarrer l'hote sans collecte memoire
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-002.md
+  pivots:
+  - P-PERSISTENCE
+  - P-PROC-TREE
+  - P-SRC-IP-SCOPE
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: 2026/11/04
+  environment: lab DC/SRV/Kali
+  command: impacket-smbexec test.local/Administrator:<pass>@192.168.20.101 ; sc create test binPath= "cmd.exe /c calc"
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: 'OK - impacket-smbexec, alerte recue dans DFIR-IRIS (#54). 7045 et 4697 remontent tous deux pour le meme service (doublon attendu)'
+  evidence: Tests/validation_environnement/DM-WIN-002.csv
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Jonas FONTAINE-DEMAY
+  change: Creation (draft)
+- date: 2026/11/05
+  author: Jonas FONTAINE-DEMAY
+  change: passage en test apres validation dans le lab

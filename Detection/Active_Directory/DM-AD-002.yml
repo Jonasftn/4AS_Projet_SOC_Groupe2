@@ -1,0 +1,126 @@
+title: AS-REP Roasting - AS-REQ sans pre-authentification
+id: DM-AD-002
+status: draft
+description: >
+  Detecte des demandes de TGT (4768) reussies sans pre-authentification (PreAuthType 0),
+  utilisees pour recuperer un blob AS-REP cassable hors ligne sur les comptes configures
+  avec 'Do not require Kerberos preauthentication'.
+author: Groupe 2 - Tim LEVADOUX
+date: 2026/11/02
+modified: 2026/11/03
+references:
+- https://attack.mitre.org/techniques/T1558/004/
+- https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4768
+tags:
+- attack.credential_access
+- attack.t1558.004
+killchain: Acces aux identifiants
+attack_summary:
+  mechanism: L'attaquant demande un TGT pour un compte dont la pre-authentification est desactivee; le DC renvoie un blob chiffre avec le hash du compte, cassable hors ligne.
+  attacker_prerequisites: Liste de noms d'utilisateurs et acces reseau au DC (aucun identifiant necessaire).
+  environment_prerequisites: Au moins un compte avec 'Do not require Kerberos preauthentication' (UF_DONT_REQUIRE_PREAUTH).
+  complexity: faible
+logsource:
+  product: windows
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4768'
+  audit_policy: 'Audit Kerberos Authentication Service : Success and Failure'
+  collected_on: DC
+  verified_in_splunk: false
+  notes: >
+    Evenement produit par le DC uniquement. Noms de champs attendus avec le TA Windows :
+    Pre_Authentication_Type, Result_Code, Account_Name (nom court, sans domaine), Client_Address,
+    Ticket_Encryption_Type. A confirmer dans Splunk avant livraison.
+detection:
+  selection:
+    EventID: 4768
+    PreAuthType: '0'
+    Status: '0x0'
+  filter_machine:
+    TargetUserName|endswith: '$'
+  condition: selection and not filter_machine
+fields:
+- TargetUserName
+- IpAddress
+- PreAuthType
+- TicketEncryptionType
+level: medium
+severity_rationale: >
+  Exposition d'un hash de compte; impact reel si le mot de passe est faible. MEDIUM pour un compte,
+  HIGH si au moins 2 comptes distincts sont vises depuis la meme IP dans la fenetre.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si la source n'est pas un poste du parc (IP inconnue, machine non jointe au domaine)
+- +1 si plusieurs regles se declenchent pour la meme source (ex. DM-AD-004 enumeration)
+falsepositives:
+- Compte legitimement configure sans pre-authentification (application ancienne, a inventorier puis corriger)
+exclusions:
+  mechanism: lookup CSV des comptes connus sans pre-auth et des sources legitimes + filtre dans la requete
+  lookup_file: dm_ad_002_exclusions.csv
+  lookup_columns: account,src_ip,comment
+  entries: []
+known_evasions:
+- Les tentatives sur comptes avec pre-auth ne produisent pas de 4768 reussi (seule l'enumeration reste visible, cf. DM-AD-004)
+- Ciblage d'un seul compte (reste en MEDIUM)
+- Demande emise depuis un poste legitime du parc (se fond dans le trafic Kerberos normal)
+design_choice: >
+  Regle specifique au succes sans pre-auth : tout resultat revele au minimum une mauvaise configuration.
+  L'enumeration (kerbrute) est couverte par DM-AD-004. Pas de filtre sur le chiffrement (RC4/AES) car
+  les deux types de blob AS-REP sont cassables; le type est remonte a titre informatif.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] AS-REP Roasting - AS-REQ sans pre-authentification'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: for each result
+  throttle:
+    fields: src_ip
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  severity_field: severity_hint
+  search_file: DM-AD-002.spl
+response:
+  containment:
+  - Isoler la machine source (ou bloquer son acces au DC)
+  - Reinitialiser le mot de passe des comptes exposes (le hash est deja sorti, activer la pre-auth ne suffit pas)
+  - Activer la pre-authentification sur les comptes concernes
+  remediation:
+  - Mot de passe long et aleatoire sur les comptes qui doivent rester sans pre-auth
+  - Audit periodique de l'attribut DONT_REQ_PREAUTH (Get-ADUser -Filter 'DoesNotRequirePreAuth -eq $true')
+  - Forcer AES et desactiver RC4 sur le domaine
+  do_not:
+  - Ne pas ignorer l'alerte au motif que le compte est peu privilegie
+  - Ne pas se contenter d'activer la pre-auth sans changer le mot de passe
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-002.md
+  pivots:
+  - P-USER-LOGONS
+  - P-SRC-IP-SCOPE
+  - P-PROC-TREE
+  client_notification: non - qualification sous 8h (SLA MEDIUM); oui si HIGH ou compte privilegie expose
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  setup: Set-ADAccountControl -Identity <user_test> -DoesNotRequirePreAuth $true (le compte doit figurer dans users.txt)
+  command: impacket-GetNPUsers test.local/ -usersfile users.txt -no-pass -dc-ip 192.168.10.100 -format hashcat
+  expected: 4768 avec Pre_Authentication_Type=0 et Result_Code=0x0, alerte MEDIUM dans Splunk puis case DFIR-IRIS (HIGH si 2 comptes ou plus)
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Tim LEVADOUX
+  change: Creation (draft)
+- date: 2026/11/03
+  author: Tim LEVADOUX
+  change: >
+    Revue - logsource conforme Sigma, PreAuthType en chaine, fields aux noms Sigma, lookup d'exclusion
+    integre a la SPL, trigger par resultat, reinitialisation du mot de passe ajoutee au confinement,
+    prerequis de test.

@@ -1,0 +1,7 @@
+"_time",ComputerName,EventCode,User,Image,CommandLine,TargetFilename
+"2026-11-03T17:29:47.000+0000","SRV.test.local",1,"NOT_TRANSLATED
+TEST\Administrator","C:\Windows\System32\cmd.exe","cmd  /c echo rundll32 comsvcs.dll MiniDump 123 lsass_test.dmp full",
+"2026-11-03T17:28:55.000+0000","SRV.test.local",11,"NOT_TRANSLATED","C:\Windows\system32\cmd.exe",,"C:\Windows\Temp\lsass_build_test.dmp"
+"2026-11-03T17:25:53.000+0000","SRV.test.local",11,"NOT_TRANSLATED","C:\Windows\system32\cmd.exe",,"C:\Windows\Temp\lsass_build_test.dmp"
+"2026-11-03T17:24:13.000+0000","SRV.test.local",1,"NOT_TRANSLATED
+TEST\Administrator","C:\Windows\System32\cmd.exe","cmd  /c echo rundll32 comsvcs.dll MiniDump 123 lsass_test.dmp full",

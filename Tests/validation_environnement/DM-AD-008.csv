@@ -1,0 +1,3 @@
+"_time",regle,severite,detection,compte,objet,attribut,valeur
+"2026-11-04T15:27:30.000+0000","DM-AD-008",HIGH,"Kerberos Delegation Modification",Administrator,"SOC-TEST-DELEGATION","msDS-AllowedToDelegateTo","HTTP/soc-test-delegation-v2.test.local"
+"2026-11-04T15:18:29.000+0000","DM-AD-008",HIGH,"Kerberos Delegation Modification",Administrator,"SOC-TEST-DELEGATION","msDS-AllowedToDelegateTo","HTTP/soc-test-delegation.test.local"

@@ -1,0 +1,124 @@
+title: Creation d'une tache planifiee suspecte
+id: DM-WIN-001
+status: test
+description: >
+  Detecte la creation d'une tache planifiee (4698 ou schtasks /create) dont la commande utilise un interpreteur ou un dossier inscriptible.
+author: Groupe 2 - Jonas FONTAINE-DEMAY
+date: 2026/11/02
+modified: 2026/11/05
+references:
+- https://attack.mitre.org/techniques/T1053/005/
+tags:
+- attack.persistence
+- attack.t1053.005
+killchain: Persistance / execution
+attack_summary:
+  mechanism: Creation d'une tache qui execute un payload periodiquement ou a distance (schtasks, atexec).
+  attacker_prerequisites: Droits suffisants pour creer une tache.
+  environment_prerequisites: Planificateur de taches actif.
+  complexity: faible
+logsource:
+  product: windows
+  category: process_creation
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4698'
+  audit_policy: 'Audit Other Object Access Events : No Auditing sur le DC, Success and Failure sur les serveurs'
+  collected_on: serveurs uniquement
+  verified_in_splunk: false
+  notes: '4698 absent du DC: s''appuyer sur Sysmon 1.'
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  audit_policy: Process Creation (sysmon-modular)
+  collected_on: tous
+  verified_in_splunk: false
+  notes: schtasks.exe /create
+detection:
+  selection:
+    Image|endswith: \schtasks.exe
+    CommandLine|contains: /create
+  selection_content:
+    CommandLine|contains:
+    - powershell
+    - cmd.exe /c
+    - mshta
+    - rundll32
+    - \AppData\
+    - \Temp\
+    - -enc
+    - http
+  condition: selection and selection_content
+fields:
+- ComputerName
+- User
+- detail
+level: medium
+severity_rationale: >
+  Persistance courante; MEDIUM, HIGH si la tache s'execute en SYSTEM ou vise un dossier inscriptible.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Mises a jour logicielles
+- Taches d'administration
+exclusions:
+  mechanism: lookup CSV des auteurs et chemins autorises
+  entries: []
+known_evasions:
+- Creation via API COM ou fichier XML importe
+- Taches dont la commande ne contient aucun motif
+design_choice: >
+  Filtre sur les motifs suspects pour limiter le bruit; le DC n'a pas 4698, la couverture y est partielle.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Creation d''une tache planifiee suspecte'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,detail
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main ((source="WinEventLog:Security" EventCode=4698) OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="*\\schtasks.exe" CommandLine="*/create*"))
+    | eval detail=coalesce(Task_Content, CommandLine)
+    | where match(detail, "(?i)(powershell|cmd\.exe\s+/c|mshta|rundll32|regsvr32|\\\\AppData\\\\|\\\\Temp\\\\|\\\\Users\\\\Public|-enc|http)")
+    | table _time ComputerName User detail
+response:
+  containment:
+  - Desactiver la tache
+  - Isoler l'hote si le payload est confirme malveillant
+  remediation:
+  - Supprimer la tache et le binaire associe
+  - Restreindre la creation de taches par GPO
+  do_not:
+  - Ne pas supprimer la tache avant d'avoir exporte son XML
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-001.md
+  pivots:
+  - P-PERSISTENCE
+  - P-PROC-TREE
+  - P-USER-LOGONS
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: 2026/11/04
+  environment: lab DC/SRV/Kali
+  command: schtasks /create /tn Upd /tr "powershell -enc AAAA" /sc minute /ru SYSTEM
+  expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
+  result: 'OK - alerte recue dans DFIR-IRIS (#46)'
+  evidence: Tests/validation_environnement/DM-WIN-001.csv
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Jonas FONTAINE-DEMAY
+  change: Creation (draft)
+- date: 2026/11/05
+  author: Jonas FONTAINE-DEMAY
+  change: passage en test apres validation dans le lab

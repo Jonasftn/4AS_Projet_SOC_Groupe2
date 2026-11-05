@@ -1,0 +1,11 @@
+"_time",ComputerName,source,EventCode,actor,detail
+"2026-11-03T17:09:17.000+0000","SRV.test.local","WinEventLog:Security",4719,Administrator,"Success removed, Failure removed"
+"2026-11-03T17:09:17.000+0000","SRV.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","auditpol  /set /subcategory:""Removable Storage"" /success:disable /failure:disable"
+"2026-11-03T17:14:57.000+0000","SRV.test.local","WinEventLog:Security",4719,Administrator,"Success removed, Failure removed"
+"2026-11-03T17:14:57.000+0000","SRV.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","auditpol  /set /subcategory:""Removable Storage"" /success:disable /failure:disable"
+"2026-11-03T17:09:42.000+0000","SRV.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","auditpol  /set /subcategory:""Removable Storage"" /success:enable /failure:enable"
+"2026-11-03T17:09:42.000+0000","SRV.test.local","WinEventLog:Security",4719,Administrator,"Success Added, Failure added"
+"2026-11-03T17:15:10.000+0000","SRV.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","auditpol  /set /subcategory:""Removable Storage"" /success:enable /failure:enable"
+"2026-11-03T17:15:10.000+0000","SRV.test.local","WinEventLog:Security",4719,Administrator,"Success Added, Failure added"
+"2026-11-03T17:15:05.000+0000","SRV.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","auditpol  /set /subcategory:""Removable Storage"" /success:disable /failure:disable"
+"2026-11-05T11:44:27.000+0000","DC.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"TEST\Administrator","""C:\Windows\system32\auditpol.exe"" /set ""/subcategory:Directory Service Changes"" /success:enable"

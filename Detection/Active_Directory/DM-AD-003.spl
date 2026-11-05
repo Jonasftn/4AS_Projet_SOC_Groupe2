@@ -1,5 +1,5 @@
-index=main source="WinEventLog:Security" EventCode=5136 AttributeLDAPDisplayName="msDS-KeyCredentialLink" OperationType="%%14674"
-    NOT SubjectUserName="MSOL_*" NOT SubjectUserName="AAD_*" NOT SubjectUserName="ADSync*"
+index=main source="WinEventLog:Security" EventCode=5136 LDAP_Display_Name="msDS-KeyCredentialLink" Type="Value Added"
+    NOT Account_Name="MSOL_*" NOT Account_Name="AAD_*" NOT Account_Name="ADSync*"
 | eval rule_id="DM-AD-003", severity_hint="HIGH"
-| table rule_id severity_hint _time SubjectUserName ObjectDN ObjectClass OperationType DSName
+| table rule_id severity_hint _time Account_Name DN Class Type ComputerName
 | sort - _time

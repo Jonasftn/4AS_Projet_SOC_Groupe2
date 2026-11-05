@@ -1,0 +1,2 @@
+"_time","info.host.name","info.task.user","nb_cmd",commandes
+"2026-11-05T15:49:34.000+0000","kunai-g3",user,10,"arp arp -a getent groups hostname id ip ip -br a ip a ps ps -o user= -C splunkd ss w who"

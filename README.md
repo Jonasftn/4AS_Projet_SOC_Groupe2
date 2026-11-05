@@ -19,4 +19,4 @@ Splunk (app SA_BUILD, règles planifiées toutes les 5 min) → webhook n8n → 
 
 ## Équipe
 
-Tim LEVADOUX, Amelie SAUVAN-MAGNET, Nathan SACIER, Jonas FONTAINE-DEMAY.
+Tim LEVADOUX, Amelie SAUVAN-MAGNET, Nathan SACIER, Jonas FONTAINE-DEMAY, Killian Munt-Buron & Youssef Moutaleb.

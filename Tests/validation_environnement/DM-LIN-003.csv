@@ -1,0 +1,4 @@
+"_time","info.host.name","info.task.user","data.command_line"
+"2026-11-05T18:18:07.000+0000","kunai-g3",user,"sudo cat /etc/shadow"
+"2026-11-05T18:18:07.000+0000","kunai-g3",root,"cat /etc/shadow"
+"2026-11-05T18:17:54.000+0000","kunai-g3",user,"cat /etc/shadow"

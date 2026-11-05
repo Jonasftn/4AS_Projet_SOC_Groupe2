@@ -1,109 +1,121 @@
 title: DCSync - replication d'annuaire par un compte non DC
 id: DM-AD-005
-status: draft
+status: test
 description: >
-  Detecte l'exercice des droits de replication d'annuaire (4662) par un compte qui n'est pas un controleur de domaine.
-author: Groupe 2 - Amélie SAUVAN-MAGNET
+  Detecte un compte utilisateur en logon reseau (4624 type 3) sur le DC depuis une IP non-DC. Proxy de detection DCSync : l'event canonique 4662 avec les GUID de replication n'est pas collecte car le SACL d'audit n'est pas pose sur l'objet domaine.
+author: Groupe 2 - Amelie SAUVAN-MAGNET
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/05
 references:
 - https://attack.mitre.org/techniques/T1003/006/
 tags:
 - attack.credential_access
 - attack.t1003.006
-killchain: Acces aux identifiants
+killchain: Acces aux identifiants / compromission du domaine
 attack_summary:
-  mechanism: L'attaquant imite un DC et demande la replication des secrets (DRSUAPI GetNCChanges) pour obtenir tous les hash dont krbtgt.
-  attacker_prerequisites: 'Droits Replicating Directory Changes (All) : Domain Admins, ou compte delegue.'
-  environment_prerequisites: SACL d'audit sur la racine du domaine (a verifier).
+  mechanism: Un attaquant imite un DC et demande la replication des secrets de l'annuaire (DRSUAPI GetNCChanges) pour recuperer les empreintes de tous les comptes, dont krbtgt.
+  attacker_prerequisites: Droits de replication (Replicating Directory Changes All) ou compte a privileges equivalents.
+  environment_prerequisites: Journal Security collecte sur le DC. Detection canonique (4662) necessite un SACL d'audit sur la racine du domaine, non pose ici.
   complexity: faible
 logsource:
   product: windows
-  category: directory_service
+  category: domain_replication
   service: security
 data_requirements:
 - source: WinEventLog:Security
   event_ids:
-  - '4662'
-  audit_policy: 'Audit Directory Service Access : Success and Failure'
+  - '4624'
+  audit_policy: 'Audit Logon : Success (Logon Type 3)'
   collected_on: DC
-  verified_in_splunk: false
-  notes: 'SACL sur la racine du domaine necessaire. Pivot : 4624 de meme Logon_ID pour l''IP source.'
+  verified_in_splunk: true
+  notes: Logon reseau sur le DC, utilise comme proxy faute de 4662
 detection:
   selection:
-    EventID: 4662
-    Properties|contains:
-    - 1131f6aa-9c07-11d1-f79f-00c04fc2dcd2
-    - 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2
-    - 89e95b76-444d-4c62-991a-0facbeda640c
-  filter_exclusions:
-    SubjectUserName|endswith: $
-  condition: selection and not filter_exclusions
+    EventID: 4624
+    LogonType: 3
+  filter_dc:
+    Source_Network_Address:
+    - '127.0.0.1'
+    - '::1'
+    - '192.168.20.100'
+    - '192.168.20.101'
+  filter_machine:
+    Account_Name|endswith: '$'
+  filter_anon:
+    Account_Name: 'ANONYMOUS LOGON'
+  condition: selection and not (filter_dc or filter_machine or filter_anon)
 fields:
-- actor
-- ComputerName
-- first_seen
+- Source_Network_Address
+- host
+- count
+- comptes
 level: critical
 severity_rationale: >
-  Compromission totale du domaine (hash krbtgt). CRITICAL.
+  Un DCSync reussi equivaut a une compromission totale du domaine : l'attaquant recupere le hash de krbtgt et peut forger des tickets pour n'importe quel compte. CRITICAL.
 severity_modifiers:
-- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
-- +1 si plusieurs regles se declenchent pour la meme source
+- +1 si le compte utilise est un administrateur du domaine
+- +1 si l'action est suivie d'autres mouvements lateraux
 falsepositives:
-- Replication entre DC (comptes machine)
-- Azure AD Connect
+- Administrateur legitime se connectant au DC en reseau depuis un poste d'admin
+- Compte machine d'un DC (replication normale) - deja exclu par le filtre
 exclusions:
-  mechanism: filtre sur les comptes machine DC et comptes de synchronisation
+  mechanism: lookup CSV des IP d'administration connues ; exclusion des comptes machine et des IP du DC/SRV
   entries: []
 known_evasions:
-- Compte machine d'un DC compromis (exclu par le filtre)
+- Detection par proxy (4624) contournable si l'attaquant replique sans logon reseau classique
+- Un administrateur legitime genere le meme motif (faux positif residuel)
 design_choice: >
-  Filtre sur les GUID de replication plutot que sur tout 4662, tres bruyant sinon.
+  Faute de 4662 (SACL non pose), on detecte le logon reseau (4624 type 3) sur le DC depuis une IP qui n'est ni le DC ni le SRV ni localhost, en excluant les comptes machine. Les IP du DC (192.168.20.100) et du SRV (192.168.20.101) sont exclues pour ecarter le trafic de replication et d'administration legitime.
 splunk:
-  alert_name: '[BUILD] [CRITICAL] DCSync - replication d''annuaire par un compte non DC'
+  alert_name: '[BUILD] [CRITICAL] DCSync'
   app: SA_BUILD
   sharing: app
   index: main
   cron: '*/5 * * * *'
-  earliest: -10m@m
-  latest: -5m@m
+  earliest: -15m
+  latest: now
   trigger: number of results > 0
   trigger_mode: once
-  throttle:
-    fields: actor
-    period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
   search: |
-    index=main source="WinEventLog:Security" EventCode=4662 Access_Mask=0x100
-    (Properties="*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" OR Properties="*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*" OR Properties="*89e95b76-444d-4c62-991a-0facbeda640c*")
-    | eval actor=mvindex(Account_Name, 0)
-    | where NOT match(actor, "\$$")
-    | stats count min(_time) as first_seen values(Logon_ID) as Logon_ID by actor, ComputerName
+    index=main host="DC.test.local" EventCode=4624 Logon_Type=3
+    Account_Name!="ANONYMOUS LOGON"
+    Source_Network_Address!="127.0.0.1" Source_Network_Address!="::1"
+    Source_Network_Address!="192.168.20.100"
+    Source_Network_Address!="192.168.20.101"
+    | eval compte=mvfilter(Account_Name!="-" AND NOT match(Account_Name, "\$$"))
+    | stats count values(compte) as comptes by Source_Network_Address, host
+    | where isnotnull(comptes)
+    | sort - count
 response:
   containment:
-  - Isoler la machine source
+  - Isoler la source
   - Desactiver le compte utilise
+  - Preparer une double rotation du mot de passe de krbtgt
   remediation:
-  - Double reinitialisation du mot de passe krbtgt
-  - Rotation des comptes privilegies
+  - Considerer tout le domaine comme compromis
+  - Rechercher les golden tickets et les connexions anormales
   do_not:
-  - Ne pas reinitialiser krbtgt une seule fois sans plan de reprise
+  - Ne pas se contenter d'une seule rotation krbtgt (il en faut deux)
 investigation:
   playbook: Investigation/fiches_reflexes/DM-AD-005.md
   pivots:
-  - P-LOGON-SESSION
   - P-SRC-IP-SCOPE
-  - P-USER-LOGONS
+  - P-ACCOUNT-ACTIVITY
+  - P-DC-REPLICATION
   client_notification: oui - notification client sous 2h (SLA CRITICAL), qualification sous 4h
 tests:
-- date: ''
+- date: 2026/11/05
   environment: lab DC/SRV/Kali
-  command: impacket-secretsdump -just-dc test.local/Administrator@192.168.10.100
+  command: impacket-secretsdump test.local/administrator:<pass>@192.168.20.100 -just-dc-user krbtgt
   expected: Alerte CRITICAL dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: OK
+  evidence: Tests/validation_environnement/DM-AD-005.csv ; Tests/validation_environnement/captures/DM-AD-005.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
-  author: Amélie SAUVAN-MAGNET
+  author: Amelie SAUVAN-MAGNET
   change: Creation (draft)
+- date: 2026/11/05
+  author: Amelie SAUVAN-MAGNET
+  change: Test valide en labo, ajout exclusion SRV (faux positif), passage en status test

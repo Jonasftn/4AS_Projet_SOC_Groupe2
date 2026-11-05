@@ -4,7 +4,7 @@
 | ----- | ----- | 
 | ID | DM-LIN-003 | 
 | Nom de l'alerte Splunk | \[BUILD\] \[HIGH\] Acces a /etc/shadow | 
-| Sévérité | High (+1 si bastion, DC ou VIP) | 
+| Sévérité | High  | 
 | MITRE ATT&CK | T1003 (OS Credential Dumping) | 
 | Statut | Validée de bout en bout (Kunai → Splunk → DFIR-IRIS) | 
 
@@ -70,7 +70,7 @@ index=main sourcetype=kunai
 
 ### Actions
 
-* **Bénin confirmé** : Documenter dans IRIS. Si c'est un script régulier (ex: backup), l'ajouter au fichier `DM-LIN-003_exclusions.csv`. Clôturer.
+* **Faux Positifs** : Documenter dans IRIS. Si c'est un script régulier (ex: backup), l'ajouter au fichier `DM-LIN-003_exclusions.csv`. Clôturer.
 
 * **Suspect** : Analyser l'arbre des processus (`P-PROC-TREE`) pour déterminer le contexte de l'exécution. Vérifier si des outils d'exfiltration (nc, curl, wget) ont été utilisés juste après.
 

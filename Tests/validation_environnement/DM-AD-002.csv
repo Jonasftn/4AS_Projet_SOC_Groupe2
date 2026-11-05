@@ -1,0 +1,2 @@
+"rule_id","severity_hint","src_ip",ComputerName,"nb_comptes",comptes,"enc_types","nb_tgt","first_seen","last_seen"
+"DM-AD-002",HIGH,"192.168.20.200","DC.test.local",2,"user_test1 user_test2",0x17,9,"2026-11-05 11:39:31","2026-11-05 12:40:43"

@@ -19,7 +19,10 @@ Ces outils sont signés Microsoft et présents partout : ils passent souvent sou
 ## Requête SPL
 
 ```
-<à coller depuis le YAML de la règle>
+index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1
+((Image="*\\certutil.exe" CommandLine="*urlcache*") OR (Image="*\\mshta.exe" CommandLine="*http*")
+OR (Image="*\\regsvr32.exe" CommandLine="*/i:http*") OR (Image="*\\bitsadmin.exe" CommandLine="*/transfer*"))
+| table _time ComputerName User Image CommandLine ParentImage
 ```
 
 ## Paramètres de l'alerte

@@ -77,9 +77,7 @@ severity_modifiers:
 - +1 si l'objet cible est un controleur de domaine ou un compte de service a privileges
 - +1 si un 4768 PKINIT inhabituel est observe sur le compte cible peu apres l'ajout
 falsepositives:
-- Azure AD Connect / Azure AD hybrid join : ecrit legitimement msDS-KeyCredentialLink sur
-  les objets ordinateur (cles de peripherique) a chaque inscription hybride. Tres frequent
-  en environnement hybride, generalement exclu par SubjectUserName du compte de sync.
+- 'Azure AD Connect / Azure AD hybrid join : ecrit legitimement msDS-KeyCredentialLink sur les objets ordinateur (cles de peripherique) a chaque inscription hybride. Tres frequent en environnement hybride, generalement exclu par SubjectUserName du compte de sync.'
 - Solutions PAM ou de gestion de certificats qui provisionnent des cles d'authentification
 exclusions:
   mechanism: lookup CSV des comptes de service legitimes (sync AAD, PAM) + filtre dans la requete
@@ -126,8 +124,7 @@ response:
     necessaire (idealement uniquement les comptes de sync AAD sur les objets ordinateur)
   - Verifier l'absence d'autres cles residuelles sur les comptes a privileges
   do_not:
-  - Ne pas se contenter de reinitialiser le mot de passe sans supprimer la cle : la cle
-    seule permet toujours l'authentification PKINIT independamment du mot de passe
+  - 'Ne pas se contenter de reinitialiser le mot de passe sans supprimer la cle : la cle seule permet toujours l''authentification PKINIT independamment du mot de passe'
   - Ne pas fermer le case sans verifier l'origine du droit d'ecriture (ACL mal configuree)
 investigation:
   playbook: Investigation/fiches_reflexes/DM-AD-003.md

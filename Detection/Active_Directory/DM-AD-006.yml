@@ -129,8 +129,7 @@ response:
   do_not:
   - Ne pas retirer le membre avant d'avoir confirme qu'il ne s'agit pas d'un changement
     planifie en cours (verifier le ticket de changement avant action)
-  - Ne pas se limiter au retrait du groupe si le compte acteur est lui-meme compromis :
-    traiter l'incident a la source
+  - 'Ne pas se limiter au retrait du groupe si le compte acteur est lui-meme compromis : traiter l''incident a la source'
 investigation:
   playbook: Investigation/fiches_reflexes/DM-AD-006.md
   pivots:

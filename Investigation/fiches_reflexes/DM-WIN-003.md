@@ -19,7 +19,10 @@ Technique de persistance simple, qui ne demande pas toujours de droits élevés 
 ## Requête SPL
 
 ```
-<à coller depuis le YAML de la règle>
+index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=13 (TargetObject="*\\CurrentVersion\\Run\\*" OR TargetObject="*\\CurrentVersion\\RunOnce\\*")
+NOT Image="C:\\Program Files\\*" NOT Image="C:\\Program Files (x86)\\*" NOT Image="*\\msiexec.exe"
+| eval severity_hint=if(match(Details, "(?i)(powershell|cmd|mshta|rundll32|wscript|cscript|\\\\Users\\\\|\\\\Temp\\\\|\\\\ProgramData\\\\)"), "HIGH", "MEDIUM")
+| table _time ComputerName User Image TargetObject Details severity_hint
 ```
 
 ## Paramètres de l'alerte

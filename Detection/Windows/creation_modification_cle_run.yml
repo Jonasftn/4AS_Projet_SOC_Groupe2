@@ -1,11 +1,11 @@
 title: Creation ou modification d'une cle Run
 id: DM-WIN-003
-status: draft
+status: test
 description: >
   Detecte l'ecriture de valeurs dans les cles Run et RunOnce (Sysmon 13).
 author: Groupe 2 - Jonas FONTAINE-DEMAY
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/05
 references:
 - https://attack.mitre.org/techniques/T1547/001/
 tags:
@@ -96,14 +96,17 @@ investigation:
   - P-USER-LOGONS
   client_notification: non - qualification sous 8h (SLA MEDIUM)
 tests:
-- date: ''
+- date: 2026/11/04
   environment: lab DC/SRV/Kali
   command: reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Upd /d C:\Users\Public\a.exe
   expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: 'OK - reg add HKCU Run, alerte recue dans DFIR-IRIS (#47)'
+  evidence: Tests/validation_environnement/DM-WIN-003.csv
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
   author: Jonas FONTAINE-DEMAY
   change: Creation (draft)
+- date: 2026/11/05
+  author: Jonas FONTAINE-DEMAY
+  change: passage en test apres validation dans le lab

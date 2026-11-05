@@ -15,7 +15,8 @@ Détecte une même source réseau qui échoue à s'authentifier sur de nombreux 
 ## Requête SPL
 
     index=main source="WinEventLog:Security" EventCode=4625
-    | stats dc(Account_Name) as nb_comptes values(Account_Name) as comptes count as nb_echecs by Source_Network_Address, host
+    | eval compte=mvfilter(Account_Name!="-" AND Account_Name!="*$")
+    | stats dc(compte) as nb_comptes values(compte) as comptes count as nb_echecs by Source_Network_Address, host
     | where nb_comptes >= 5
     | sort - nb_comptes
 

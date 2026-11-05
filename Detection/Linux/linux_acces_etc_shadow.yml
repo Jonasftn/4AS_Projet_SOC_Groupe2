@@ -6,7 +6,7 @@ description: >
   y compris via chemin deguise, wildcard ou nom relatif.
 author: Groupe 2 - Killian MUNT-BURON
 date: 2026/11/02
-modified: 2026/11/03
+modified: 2026/11/05
 references:
 - https://attack.mitre.org/techniques/T1003
 tags:
@@ -28,8 +28,8 @@ data_requirements:
   - execve
   audit_policy: Collecte Kunai
   collected_on: serveurs Linux
-  verified_in_splunk: false
-  notes: Champs Kunai (info.event.name, data.command_line, info.task.user, info.host.name) a verifier sur des donnees reelles. Le champ cmd est calcule dans le SPL, pas fourni par Kunai. Verifier si data.command_line contient les arguments tels que saisis (wildcards non developpes, ce qui est le cas si le shell les developpe avant execve a verifier) et si un champ cwd est disponible pour affiner selection_relative.
+  verified_in_splunk: true
+  notes: Extraction via rex/mvexpand pour gerer les JSON multiples fusionnes par Splunk. Prefiltre Splunk sur les mots 'shadow' ou '/etc/' deplace sur le champ 'cl' apres decoupage pour eviter les faux negatifs.
 detection:
   selection_path:
     info.event.name: execve
@@ -68,8 +68,7 @@ design_choice: >
   Trois motifs complementaires sur execve : chemin explicite (avec variantes ///, /./, gshadow,
   /var/backups), wildcard sur le dernier element du chemin, et nom relatif apres un binaire de lecture.
   Prefiltre Splunk sur shadow ou /etc/ pour la performance. Une ligne par commande (pas de stats)
-  pour respecter le table impose. Whitelist par lookup utilisateur (vide par defaut). Une seule
-  alerte par recherche (trigger_mode once), avec throttle par hote pour limiter le bruit.
+  pour respecter le table impose. Whitelist par lookup utilisateur (vide par defaut).
   Les evasions sans trace dans la ligne de commande demandent des evenements de lecture de fichier Kunai (hors perimetre).
 splunk:
   alert_name: '[BUILD] [HIGH] Acces a /etc/shadow'
@@ -80,21 +79,27 @@ splunk:
   earliest: -10m@m
   latest: -5m@m
   trigger: number of results > 0
-  trigger_mode: once
+  trigger_mode: for_each_result
   throttle:
     fields: info.host.name
     period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
   search: |
-    index=main sourcetype=*kunai* | spath
-    | search info.event.name="execve" (data.command_line="*shadow*" OR data.command_line="*/etc/*")
-    | eval cmd='data.command_line'
+    index=main sourcetype=kunai
+    | rex max_match=0 field=_raw "(?<obj>\{\"data\":.*?\"utc_time\":\"[^\"]+\"\}\})"
+    | mvexpand obj
+    | spath input=obj path=info.event.name output=ev
+    | search ev="execve"
+    | spath input=obj path=data.command_line output=cl
+    | search cl="*shadow*" OR cl="*/etc/*"
+    | spath input=obj path=info.host.name output=srv
+    | spath input=obj path=info.task.user output=usr
+    | eval cmd=cl
     | where isnotnull(cmd)
-    | where match(cmd, "(?i)(/etc/+([.]?/+)*|/var/backups/)g?shadow")
-       OR match(cmd, "(?i)/etc/+([.]?/+)*g?(s|sh|sha|shad|shado)[*?[]")
-       OR match(cmd, "(?i)(^|[/\s])(cat|cp|less|more|head|tail|strings|base64|xxd|dd|sed|awk|grep|tar|unshadow|john)\s([^|;&]*[\s=])?g?shadow-?(\s|$)")
-    | lookup DM-LIN-003_exclusions.csv user AS info.task.user OUTPUT exclude
+    | where match(cmd, "(?i)(/etc/+([.]?/+)*|/var/backups/)g?shadow") OR match(cmd, "(?i)/etc/+([.]?/+)*g?(s|sh|sha|shad|shado)[*?[]") OR match(cmd, "(?i)(^|[/\s])(cat|cp|less|more|head|tail|strings|base64|xxd|dd|sed|awk|grep|tar|unshadow|john)\s([^|;&]*[\s=])?g?shadow-?(\s|$)")
+    | lookup DM-LIN-003_exclusions.csv user AS usr OUTPUT exclude
     | where isnull(exclude)
+    | rename srv AS "info.host.name", usr AS "info.task.user", cl AS "data.command_line"
     | table _time info.host.name info.task.user data.command_line
 response:
   containment:
@@ -124,12 +129,11 @@ tests:
   result: reponds bien à la regle de correlation DM-LIN-003
   evidence: Regarder dans le rapport les différents images et les fichiers csv.
 - date: 2026/11/04
-  environment: non disponible
-  command: 'cat /etc/passwd ; ls /etc (hote Linux de test)'
-  expected: Aucune alerte
-  result: pas d'alerte, reponds bien à la regle de correlation DM-LIN-003
+  environment: JSON d'evenements Kunai simulant un acces sans alerte
+  command: cat /etc/shadow
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: Alerte HIGH dans Splunk puis DFIR-IRIS
   evidence: Regarder dans le rapport les différents images et les fichiers csv.
-untestable_reason: 'Aucune machine Linux avec Kunai dans le lab: validation par lecture de la documentation Kunai et d''un jeu d''evenements d''exemple.'
 changelog:
 - date: 2026/11/02
   author: Killian MUNT-BURON
@@ -143,3 +147,6 @@ changelog:
 - date: 2026/11/04
   author: Killian MUNT-BURON
   change: Ajout de tests unitaires
+- date: 2026/11/05
+  author: Killian MUNT-BURON
+  change: SPL ameliore (rex/mvexpand) pour les logs fusionnes. Retrait de untestable_reason suite a la mise en place de la VM de test.

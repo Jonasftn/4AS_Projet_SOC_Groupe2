@@ -1,0 +1,122 @@
+title: Modification de la politique d'audit
+id: DM-WIN-008
+status: test
+description: 'Detecte la modification de la politique d''audit (4719) ou l''utilisation d''auditpol /set, /clear, /remove.
+
+  '
+author: Groupe 2 - Nathan SACIER
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1562/002/
+tags:
+- attack.defense_evasion
+- attack.t1562.002
+killchain: Evasion de defense
+attack_summary:
+  mechanism: Desactivation de l'audit pour reduire la visibilite.
+  attacker_prerequisites: Droits administrateur.
+  environment_prerequisites: Politique locale modifiable.
+  complexity: faible
+logsource:
+  product: windows
+  category: policy_change
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '4719'
+  audit_policy: 'Audit Audit Policy Change : Success and Failure'
+  collected_on: tous
+  verified_in_splunk: true
+  notes: ''
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '1'
+  audit_policy: Process Creation
+  collected_on: tous
+  verified_in_splunk: true
+  notes: auditpol.exe
+detection:
+  selection_event:
+    EventID: 4719
+  selection_cli:
+    Image|endswith: \auditpol.exe
+    CommandLine|contains:
+    - /set
+    - /clear
+    - /remove
+  condition: selection_event or selection_cli
+fields:
+- ComputerName
+- User
+- EventCode
+- CommandLine
+level: high
+severity_rationale: 'Reduction volontaire de la visibilite. HIGH.
+
+  '
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Application d'une GPO d'audit legitime
+exclusions:
+  mechanism: lookup CSV des changements de GPO planifies
+  entries: []
+known_evasions:
+- Modification via GPO sans passer par auditpol (4719 couvre)
+design_choice: 'Deux sources pour reduire les faux negatifs.
+
+  '
+splunk:
+  alert_name: '[BUILD] [HIGH] Modification de la politique d''audit'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: 'index=main ((source="WinEventLog:Security" EventCode=4719)
+
+    OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="*\\auditpol.exe" (CommandLine="*/set*" OR CommandLine="*/clear*" OR CommandLine="*/remove*")))
+
+    | eval actor=coalesce(Account_Name, mvindex(User,-1)), detail=coalesce(Changes, CommandLine)
+
+    | search NOT actor="*$" AND actor!="SYSTEM"
+
+    | table _time ComputerName source EventCode actor detail
+
+    '
+response:
+  containment:
+  - Restaurer la politique d'audit
+  - Isoler l'hote si la modification n'est pas reconnue
+  remediation:
+  - Verrouiller la politique d'audit par GPO
+  do_not:
+  - Ne pas redemarrer avant d'avoir restaure l'audit
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-008.md
+  pivots:
+  - P-USER-LOGONS
+  - P-PROC-TREE
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: 2026/11/03
+  environment: lab SRV (192.168.20.101)
+  command: auditpol /set /subcategory:"Removable Storage" /success:disable /failure:disable (puis re-enable)
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: OK - 4719 (Changes="Success removed, Failure removed") et Sysmon auditpol.exe detectes. Baseline 24h propre, aucun bruit SYSTEM/machine a exclure.
+  evidence: Tests/validation_environnement/DM-WIN-008/
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Nathan SACIER
+  change: Creation (draft)

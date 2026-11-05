@@ -1,0 +1,4 @@
+"_time",ComputerName,source,EventCode,User,CommandLine
+"2026-11-04T13:14:36.000+0000","DC.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"NT AUTHORITY\SYSTEM","wevtutil  cl System"
+"2026-11-04T13:14:36.000+0000","DC.test.local","WinEventLog:Microsoft-Windows-Sysmon/Operational",1,"NT AUTHORITY\SYSTEM","cmd.exe /Q /c echo wevtutil cl System redirige vers DC C$ puis supprime le bat"
+"2026-11-04T13:14:36.000+0000","DC.test.local","WinEventLog:System",104,SYSTEM,

@@ -1,0 +1,126 @@
+title: Modification d'une delegation Kerberos
+id: DM-AD-008
+status: test
+description: >
+  Detecte la modification d'un attribut de delegation Kerberos (msDS-AllowedToDelegateTo, msDS-AllowedToActOnBehalfOfOtherIdentity) sur un objet de l'annuaire, voie classique d'elevation de privileges par usurpation d'identite.
+author: Groupe 2 - Amelie SAUVAN-MAGNET
+date: 2026/11/02
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1134/005/
+tags:
+- attack.privilege_escalation
+- attack.t1134.005
+killchain: Elevation de privileges / persistance Active Directory
+attack_summary:
+  mechanism: Ajout ou modification d'une delegation Kerberos (contrainte ou RBCD) permettant a un service d'usurper l'identite d'un utilisateur vers un autre service.
+  attacker_prerequisites: Droits d'ecriture sur l'objet cible (GenericWrite, GenericAll).
+  environment_prerequisites: Audit Directory Service Changes et Audit User Account Management actifs sur le DC.
+  complexity: moyenne
+logsource:
+  product: windows
+  category: directory_service_changes
+  service: security
+data_requirements:
+- source: WinEventLog:Security
+  event_ids:
+  - '5136'
+  audit_policy: 'Audit Directory Service Changes : Success'
+  collected_on: DC
+  verified_in_splunk: true
+  notes: Modification de l'attribut de delegation
+- source: WinEventLog:Security
+  event_ids:
+  - '4738'
+  audit_policy: 'Audit User Account Management : Success'
+  collected_on: DC
+  verified_in_splunk: true
+  notes: Modification d'un compte portant une delegation
+detection:
+  selection_5136:
+    EventID: 5136
+    AttributeLDAPDisplayName:
+    - msDS-AllowedToDelegateTo
+    - msDS-AllowedToActOnBehalfOfOtherIdentity
+  selection_4738:
+    EventID: 4738
+    AllowedToDelegateTo|exists: true
+  condition: selection_5136 or selection_4738
+fields:
+- _time
+- compte
+- objet
+- attribut
+- valeur
+level: high
+severity_rationale: >
+  La mise en place d'une delegation ouvre la possibilite d'usurper des identites vers des services, sans constituer en soi une compromission aboutie. HIGH.
+severity_modifiers:
+- +1 si l'objet delegue est un actif critique (DC, serveur applicatif sensible)
+- +1 si le compte modificateur n'est pas un administrateur AD attendu
+falsepositives:
+- Configuration legitime d'une delegation par les administrateurs lors d'un changement d'infrastructure
+exclusions:
+  mechanism: lookup CSV des changements de delegation planifies
+  entries: []
+known_evasions:
+- Delegation non contrainte via le flag userAccountControl (non couverte, piste RUN)
+design_choice: >
+  Deux angles combines : 5136 pour la delegation contrainte et RBCD posee sur un objet, 4738 pour une delegation portee par un compte utilisateur. Les champs sont extraits par rex depuis le log brut et harmonises vers des colonnes communes.
+splunk:
+  alert_name: '[BUILD] [HIGH] Kerberos Delegation Modification'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -15m
+  latest: now
+  trigger: number of results > 0
+  trigger_mode: once
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main host="DC.test.local" (EventCode=5136 OR EventCode=4738)
+    | rex field=_raw "LDAP Display Name:[ \t]*(?<attribut5136>[^\r\n]+)"
+    | rex field=_raw "Account Name:[ \t]*(?<compte>[^\r\n]+)"
+    | rex field=_raw "DN:[ \t]*(?<objet5136>[^\r\n]+)"
+    | rex field=_raw "Value:[ \t]*(?<valeur5136>[^\r\n]+)"
+    | rex field=_raw "AllowedToDelegateTo:[ \t\r\n]+(?<delegation4738>[^\r\n]+)"
+    | rex field=_raw "Target Account:[\s\S]*?Account Name:[ \t]*(?<cible4738>[^\r\n]+)"
+    | eval attribut=if(EventCode=4738,"msDS-AllowedToDelegateTo",attribut5136)
+    | eval objet=if(EventCode=4738,cible4738,objet5136)
+    | eval valeur=if(EventCode=4738,delegation4738,valeur5136)
+    | where (EventCode=5136 AND (attribut="msDS-AllowedToDelegateTo" OR attribut="msDS-AllowedToActOnBehalfOfOtherIdentity")) OR (EventCode=4738 AND isnotnull(valeur) AND trim(valeur)!="-")
+    | eval regle="DM-AD-008", severite="HIGH", detection="Kerberos Delegation Modification"
+    | table _time, regle, severite, detection, compte, objet, attribut, valeur
+    | sort - _time
+response:
+  containment:
+  - Annuler la delegation ajoutee
+  - Desactiver le compte a l'origine de la modification s'il n'etait pas autorise
+  remediation:
+  - Verifier si l'objet delegue a ensuite demande des tickets (4769)
+  - Revoir les droits d'ecriture sur l'objet cible
+  do_not:
+  - Ne pas laisser la delegation active le temps de l'investigation
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-AD-008.md
+  pivots:
+  - P-AD-OBJECT-HISTORY
+  - P-ACCOUNT-ACTIVITY
+  - P-KERBEROS-TGS
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: 2026/11/04
+  environment: lab DC/SRV/Kali
+  command: Ajout d'une delegation msDS-AllowedToDelegateTo sur SOC-TEST-DELEGATION depuis la Kali
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: OK
+  evidence: Tests/validation_environnement/DM-AD-008.csv ; Tests/validation_environnement/captures/DM-AD-008.png
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Amelie SAUVAN-MAGNET
+  change: Creation (draft)
+- date: 2026/11/04
+  author: Amelie SAUVAN-MAGNET
+  change: Test valide en labo, passage en status test

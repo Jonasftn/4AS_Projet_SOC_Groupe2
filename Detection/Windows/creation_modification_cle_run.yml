@@ -1,0 +1,109 @@
+title: Creation ou modification d'une cle Run
+id: DM-WIN-003
+status: draft
+description: >
+  Detecte l'ecriture de valeurs dans les cles Run et RunOnce (Sysmon 13).
+author: Groupe 2 - Jonas FONTAINE-DEMAY
+date: 2026/11/02
+modified: 2026/11/02
+references:
+- https://attack.mitre.org/techniques/T1547/001/
+tags:
+- attack.persistence
+- attack.t1547.001
+killchain: Persistance
+attack_summary:
+  mechanism: Ajout d'une valeur lancee au demarrage de session ou de machine.
+  attacker_prerequisites: Droits d'ecriture sur HKCU ou HKLM.
+  environment_prerequisites: Module registre de sysmon-modular active.
+  complexity: faible
+logsource:
+  product: windows
+  category: registry_set
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '13'
+  audit_policy: Module 12_13_14_registry_event de sysmon-modular
+  collected_on: tous
+  verified_in_splunk: false
+  notes: Verifier que les cles Run sont bien incluses.
+detection:
+  selection:
+    EventID: 13
+    TargetObject|contains:
+    - \CurrentVersion\Run
+    - \CurrentVersion\RunOnce
+  filter_exclusions:
+    Image|startswith:
+    - C:\Program Files\
+    - C:\Program Files (x86)\
+  condition: selection and not filter_exclusions
+fields:
+- ComputerName
+- User
+- Image
+- TargetObject
+- Details
+level: medium
+severity_rationale: >
+  Persistance classique; MEDIUM, HIGH si la valeur lance un script ou un chemin utilisateur.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Installateurs (OneDrive, Teams, pilotes)
+exclusions:
+  mechanism: lookup CSV (Image + chemin)
+  entries: []
+known_evasions:
+- Autres emplacements de persistance (services, taches, WMI)
+design_choice: >
+  Exclusion des chemins Program Files: un attaquant qui y ecrit echappe a la regle (faux negatif documente).
+splunk:
+  alert_name: '[BUILD] [MEDIUM] Creation ou modification d''une cle Run'
+  app: SA_BUILD
+  sharing: app
+  index: main
+  cron: '*/5 * * * *'
+  earliest: -10m@m
+  latest: -5m@m
+  trigger: number of results > 0
+  trigger_mode: once
+  throttle:
+    fields: ComputerName,TargetObject
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=13 (TargetObject="*\\CurrentVersion\\Run\\*" OR TargetObject="*\\CurrentVersion\\RunOnce\\*")
+    NOT Image="C:\\Program Files\\*" NOT Image="C:\\Program Files (x86)\\*" NOT Image="*\\msiexec.exe"
+    | eval severity_hint=if(match(Details, "(?i)(powershell|cmd|mshta|rundll32|wscript|cscript|\\\\Users\\\\|\\\\Temp\\\\|\\\\ProgramData\\\\)"), "HIGH", "MEDIUM")
+    | table _time ComputerName User Image TargetObject Details severity_hint
+response:
+  containment:
+  - Supprimer la valeur et isoler l'hote si le binaire est malveillant
+  remediation:
+  - Supprimer le binaire
+  - Restreindre les droits d'ecriture dans le registre
+  do_not:
+  - Ne pas supprimer la cle avant d'avoir recupere le binaire pointe
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-WIN-003.md
+  pivots:
+  - P-PERSISTENCE
+  - P-PROC-TREE
+  - P-USER-LOGONS
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: ''
+  environment: lab DC/SRV/Kali
+  command: reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Upd /d C:\Users\Public\a.exe
+  expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Jonas FONTAINE-DEMAY
+  change: Creation (draft)

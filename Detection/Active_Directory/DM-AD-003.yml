@@ -1,6 +1,6 @@
 title: Shadow Credentials - modification de msDS-KeyCredentialLink
 id: DM-AD-003
-status: draft
+status: test
 description: >
   Detecte l'ajout d'une valeur sur l'attribut msDS-KeyCredentialLink d'un objet utilisateur
   ou ordinateur (evenement 5136), utilise pour implanter une cle publique attaquant et
@@ -8,7 +8,7 @@ description: >
   possible du hash NT via S4U2Self.
 author: Groupe 2 - Tim LEVADOUX
 date: 2026/11/04
-modified: 2026/11/04
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1556/
 - https://posts.specterops.io/shadow-credentials-abusing-key-trust-account-mapping-for-takeover-8ee1a53566ab
@@ -40,7 +40,7 @@ data_requirements:
   - '5136'
   audit_policy: 'Audit Directory Service Changes : Success'
   collected_on: DC
-  verified_in_splunk: false
+  verified_in_splunk: true
   notes: >
     Necessite la sous-categorie d'audit "Directory Service Changes" activee sur le DC
     (auditpol /set /subcategory:"Directory Service Changes" /success:enable). La SACL
@@ -48,7 +48,8 @@ data_requirements:
     d'attributs pour "Everyone" une fois la sous-categorie activee, sans configuration
     ACL supplementaire. Noms de champs attendus avec le TA Windows : ObjectDN, ObjectClass,
     AttributeLDAPDisplayName, AttributeValue, OperationType, SubjectUserName, DSName.
-    A confirmer dans Splunk avant livraison.
+    Verifie dans Splunk le 05/11/2026 : le TA du lab produit les noms classiques LDAP_Display_Name,
+    DN, Class, Type (Value Added) et Account_Name (acteur), utilises par la requete.
 detection:
   selection:
     EventID: 5136
@@ -105,7 +106,7 @@ splunk:
   trigger: number of results > 0
   trigger_mode: for each result
   throttle:
-    fields: SubjectUserName,ObjectDN
+    fields: Account_Name,DN
     period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
   severity_field: severity_hint
@@ -135,7 +136,7 @@ investigation:
   - P-PKINIT-AUTH
   client_notification: oui - alerte HIGH, notification immediate
 tests:
-- date: ''
+- date: 2026/11/05
   environment: lab DC/SRV/Kali
   setup: >
     Creer un utilisateur de test victim_test. Accorder au compte attacker_test un droit
@@ -147,10 +148,13 @@ tests:
     5136 avec AttributeLDAPDisplayName=msDS-KeyCredentialLink, OperationType=%%14674,
     SubjectUserName=attacker_test, ObjectDN=CN=victim_test,...; alerte HIGH dans Splunk
     puis case DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: "Succes. Ajout d'une Key Credential sur victim_test par attacker_test : evenements 5136 (LDAP_Display_Name=msDS-KeyCredentialLink, Type=Value Added, DN=CN=victim_test,OU=Test,DC=test,DC=local) a 13:34:49 sur DC.test.local, 5 lignes dans le resultat. Alerte recue dans DFIR-IRIS (#351, [BUILD] [HIGH] Shadow Credentials, severite High)."
+  evidence: Tests/validation_environnement/DM-AD-003.csv et Tests/validation_environnement/captures/DM-AD-003.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/04
   author: Tim LEVADOUX
   change: Creation (draft)
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Passage en test - resultats du test lab du 05/11 reportes (CSV et capture IRIS), noms de champs verifies dans Splunk

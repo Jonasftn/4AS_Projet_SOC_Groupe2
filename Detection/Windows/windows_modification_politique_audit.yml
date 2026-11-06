@@ -6,7 +6,7 @@ description: 'Detecte la modification de la politique d''audit (4719) ou l''util
   '
 author: Groupe 2 - Nathan SACIER
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1562/002/
 tags:
@@ -83,17 +83,11 @@ splunk:
     fields: ComputerName
     period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
-  search: 'index=main ((source="WinEventLog:Security" EventCode=4719)
-
-    OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="*\\auditpol.exe" (CommandLine="*/set*" OR CommandLine="*/clear*" OR CommandLine="*/remove*")))
-
-    | eval actor=coalesce(Account_Name, mvindex(User,-1)), detail=coalesce(Changes, CommandLine)
-
+  search: |
+    index=main (source="WinEventLog:Security" EventCode=4719) OR (source="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="*\\auditpol.exe" (CommandLine="*/set*" OR CommandLine="*/clear*" OR CommandLine="*/remove*"))
+    | eval actor=coalesce(Account_Name, mvindex(User,-1)), detail=coalesce(Changes, CommandLine), src=coalesce(source,"")
     | search NOT actor="*$" AND actor!="SYSTEM"
-
-    | table _time ComputerName source EventCode actor detail
-
-    '
+    | table _time ComputerName src EventCode actor detail
 response:
   containment:
   - Restaurer la politique d'audit
@@ -120,3 +114,6 @@ changelog:
 - date: 2026/11/02
   author: Nathan SACIER
   change: Creation (draft)
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Requete alignee sur la version deployee et testee dans SA_BUILD (savedsearches.conf)

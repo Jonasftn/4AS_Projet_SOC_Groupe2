@@ -1,13 +1,13 @@
 title: AS-REP Roasting - AS-REQ sans pre-authentification
 id: DM-AD-002
-status: draft
+status: test
 description: >
   Detecte des demandes de TGT (4768) reussies sans pre-authentification (PreAuthType 0),
   utilisees pour recuperer un blob AS-REP cassable hors ligne sur les comptes configures
   avec 'Do not require Kerberos preauthentication'.
 author: Groupe 2 - Tim LEVADOUX
 date: 2026/11/02
-modified: 2026/11/03
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1558/004/
 - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4768
@@ -29,11 +29,11 @@ data_requirements:
   - '4768'
   audit_policy: 'Audit Kerberos Authentication Service : Success and Failure'
   collected_on: DC
-  verified_in_splunk: false
+  verified_in_splunk: true
   notes: >
     Evenement produit par le DC uniquement. Noms de champs attendus avec le TA Windows :
     Pre_Authentication_Type, Result_Code, Account_Name (nom court, sans domaine), Client_Address,
-    Ticket_Encryption_Type. A confirmer dans Splunk avant livraison.
+    Ticket_Encryption_Type. Champs verifies dans Splunk le 05/11/2026 (lab test.local).
 detection:
   selection:
     EventID: 4768
@@ -106,13 +106,13 @@ investigation:
   - P-PROC-TREE
   client_notification: non - qualification sous 8h (SLA MEDIUM); oui si HIGH ou compte privilegie expose
 tests:
-- date: ''
+- date: 2026/11/05
   environment: lab DC/SRV/Kali
   setup: Set-ADAccountControl -Identity <user_test> -DoesNotRequirePreAuth $true (le compte doit figurer dans users.txt)
-  command: impacket-GetNPUsers test.local/ -usersfile users.txt -no-pass -dc-ip 192.168.10.100 -format hashcat
+  command: impacket-GetNPUsers test.local/ -usersfile users.txt -no-pass -dc-ip 192.168.20.100 -format hashcat
   expected: 4768 avec Pre_Authentication_Type=0 et Result_Code=0x0, alerte MEDIUM dans Splunk puis case DFIR-IRIS (HIGH si 2 comptes ou plus)
-  result: non teste
-  evidence: ''
+  result: "Succes. AS-REP Roasting lance depuis Kali (192.168.20.200) sur user_test1 et user_test2 (pre-authentification desactivee) : 9 TGT sans pre-authentification, chiffrement 0x17, entre 11:39:31 et 12:40:43 sur DC.test.local. La requete renvoie severity_hint=HIGH (2 comptes). Alerte recue dans DFIR-IRIS (#323, severite Medium) a 11:45."
+  evidence: Tests/validation_environnement/DM-AD-002.csv et Tests/validation_environnement/captures/DM-AD-002.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
@@ -124,3 +124,6 @@ changelog:
     Revue - logsource conforme Sigma, PreAuthType en chaine, fields aux noms Sigma, lookup d'exclusion
     integre a la SPL, trigger par resultat, reinitialisation du mot de passe ajoutee au confinement,
     prerequis de test.
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Passage en test - resultats du test lab du 05/11 reportes (CSV et capture IRIS), noms de champs verifies dans Splunk

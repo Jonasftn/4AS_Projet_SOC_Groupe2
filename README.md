@@ -11,7 +11,7 @@ Mini SOC d'AEGIS CyberProtect pour le client Dunder Mifflin : règles de détect
 | [`Tests/`](Tests/) | Preuves de validation des règles dans le lab (exports CSV Splunk, captures DFIR-IRIS) |
 | [`Documentation/`](Documentation/) | Architecture et sources, matrices de priorisation et de communication, MCO/MCD, organisation |
 | `Automatisation/` | Workflows n8n, templates de notification, scripts (à venir) |
-| `SA_BUILD/` | Export de l'application Splunk : `savedsearches.conf`, dashboards (à venir) |
+| [`SA_BUILD/`](SA_BUILD/) | Export de l'application Splunk : [`local/savedsearches.conf`](SA_BUILD/local/savedsearches.conf) (alertes `[BUILD]`), [`metadata/local.meta`](SA_BUILD/metadata/local.meta), dashboards (à venir) |
 
 ## Chaîne de traitement
 

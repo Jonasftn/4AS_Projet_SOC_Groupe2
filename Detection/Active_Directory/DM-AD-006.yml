@@ -1,6 +1,6 @@
 title: Ajout d'un membre a un groupe AD critique
 id: DM-AD-006
-status: draft
+status: test
 description: >
   Detecte l'ajout d'un membre a un groupe de securite AD figurant dans la liste des
   groupes critiques (Domain Admins, Enterprise Admins, Schema Admins, Administrators,
@@ -9,7 +9,7 @@ description: >
   ou d'une persistance.
 author: Groupe 2 - Tim LEVADOUX
 date: 2026/11/04
-modified: 2026/11/04
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1098/
 - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4728
@@ -41,14 +41,14 @@ data_requirements:
   - '4756'
   audit_policy: 'Audit Security Group Management : Success'
   collected_on: DC
-  verified_in_splunk: false
+  verified_in_splunk: true
   notes: >
     4728 = ajout a un groupe global de securite (ex. Domain Admins), 4732 = groupe local
     de securite, 4756 = groupe universel de securite. Noms de champs attendus avec le TA
     Windows : SubjectUserName (acteur), TargetUserName (nom du groupe), MemberName ou
-    MemberSid (compte ajoute), ComputerName (DC). A confirmer dans Splunk avant livraison ;
-    le nom exact du champ portant le groupe et celui portant le membre varient selon la
-    version du TA et doivent etre valides sur un evenement reel avant la mise en production.
+    MemberSid (compte ajoute), ComputerName (DC). Verifie dans Splunk le 05/11/2026 : le TA du
+    lab produit Group_Name (groupe), member_id (SID du membre), Security_ID et Account_Name
+    multivalues (acteur puis membre), utilises par la requete. A revalider sur le TA de production.
 detection:
   selection:
     EventID:
@@ -106,7 +106,7 @@ splunk:
   trigger: number of results > 0
   trigger_mode: for each result
   throttle:
-    fields: TargetUserName,MemberSid
+    fields: Account_Name,Security_ID
     period: 1h
   webhook_url: http://soc_n8n:5678/webhook/alert
   severity_field: severity_hint
@@ -139,7 +139,7 @@ investigation:
   - P-PRIV-USE
   client_notification: oui - alerte HIGH/CRITICAL, notification immediate
 tests:
-- date: ''
+- date: 2026/11/05
   environment: lab DC/SRV/Kali
   setup: >
     Creer critical_ad_groups.csv avec au moins une ligne "Domain Admins,0" et charger le
@@ -152,10 +152,13 @@ tests:
   expected: >
     4728 avec TargetUserName=Domain Admins, MemberName/MemberSid=victim_test,
     SubjectUserName=attacker_test; alerte CRITICAL (tier 0) dans Splunk puis case DFIR-IRIS
-  result: non teste
-  evidence: ''
+  result: "Succes. Ajout de victim_test a Domain Admins (4728, tier 0, severity_hint=CRITICAL) a 13:14:14 et 13:44:30, et a Account Operators (4732, tier 1, severity_hint=HIGH) a 13:16:37, par Administrator sur DC.test.local. Alerte recue dans DFIR-IRIS (#343, severite High) : la severite IRIS suit le prefixe du titre, l'escalade CRITICAL portee par severity_hint n'est pas encore exploitee par n8n."
+  evidence: Tests/validation_environnement/DM-AD-006.csv et Tests/validation_environnement/captures/DM-AD-006.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/04
   author: Tim LEVADOUX
   change: Creation (draft)
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Passage en test - resultats du test lab du 05/11 reportes (CSV et capture IRIS), noms de champs verifies dans Splunk

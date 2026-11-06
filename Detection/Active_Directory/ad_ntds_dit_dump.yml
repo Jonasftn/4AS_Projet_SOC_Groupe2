@@ -5,7 +5,7 @@ description: >
   Detecte l'extraction de la base NTDS.dit via ntdsutil (IFM), shadow copy, ou copie du fichier.
 author: Groupe 2 - Nathan SACIER
 date: 2026/11/02
-modified: 2026/11/02
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1003/003/
 tags:
@@ -80,9 +80,9 @@ splunk:
   webhook_url: http://soc_n8n:5678/webhook/alert
   search: |
     index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational"
-    ((EventCode=1 (CommandLine="*ntdsutil*" CommandLine="*ifm*") OR (EventCode=1 CommandLine="*vssadmin*" CommandLine="*create*" CommandLine="*shadow*") OR (EventCode=1 CommandLine="*diskshadow*") OR (EventCode=1 CommandLine="*ntds.dit*"))
+    ((EventCode=1 (CommandLine="*ntdsutil*" CommandLine="*ifm*")) OR (EventCode=1 CommandLine="*vssadmin*" CommandLine="*create*" CommandLine="*shadow*") OR (EventCode=1 CommandLine="*diskshadow*") OR (EventCode=1 CommandLine="*ntds.dit*")
     OR (EventCode=11 TargetFilename="*\\ntds.dit"))
-    | table _time ComputerName User Image CommandLine TargetFilename
+    | table _time ComputerName EventCode User Image CommandLine TargetFilename
 response:
   containment:
   - Isoler le DC du reste du reseau apres validation du client
@@ -111,3 +111,6 @@ changelog:
 - date: 2026/11/02
   author: Nathan SACIER
   change: Creation (draft)
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Requete alignee sur la version deployee et testee dans SA_BUILD (savedsearches.conf)

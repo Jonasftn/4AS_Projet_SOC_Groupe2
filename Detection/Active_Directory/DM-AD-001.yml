@@ -1,13 +1,13 @@
 title: Kerberoasting - demande de tickets de service en RC4
 id: DM-AD-001
-status: draft
+status: test
 description: >
   Detecte la demande reussie de tickets de service Kerberos (4769) chiffres en RC4 (0x17)
   pour des SPN portes par des comptes utilisateurs (hors comptes machine et krbtgt),
   emise par un compte non machine. Signe typique d'un Kerberoasting en vue d'un cassage hors ligne.
 author: Groupe 2 - Tim LEVADOUX
 date: 2026/11/02
-modified: 2026/11/03
+modified: 2026/11/06
 references:
 - https://attack.mitre.org/techniques/T1558/003/
 - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769
@@ -29,11 +29,11 @@ data_requirements:
   - '4769'
   audit_policy: 'Audit Kerberos Service Ticket Operations : Success and Failure'
   collected_on: DC
-  verified_in_splunk: false
+  verified_in_splunk: true
   notes: >
     Evenement produit par le DC uniquement. Noms de champs attendus avec le TA Windows :
     Ticket_Encryption_Type, Failure_Code, Service_Name, Account_Name (format user@DOMAINE), Client_Address.
-    A confirmer dans Splunk avant livraison.
+    Champs verifies dans Splunk le 05/11/2026 (lab test.local) : Account_Name au format user@domaine, Client_Address prefixe ::ffff:.
 detection:
   selection:
     EventID: 4769
@@ -113,13 +113,13 @@ investigation:
   - P-PROC-TREE
   client_notification: non - qualification sous 8h (SLA MEDIUM); oui si HIGH ou compte de service privilegie cible
 tests:
-- date: ''
+- date: 2026/11/05
   environment: lab DC/SRV/Kali
   setup: setspn -S HTTP/srv.test.local TEST\svc_web (compte utilisateur svc_web avec RC4 autorise)
-  command: impacket-GetUserSPNs test.local/<user>:<pass> -dc-ip 192.168.10.100 -request
+  command: impacket-GetUserSPNs test.local/<user>:<pass> -dc-ip 192.168.20.100 -request
   expected: 4769 avec Ticket_Encryption_Type=0x17 et Failure_Code=0x0, alerte MEDIUM dans Splunk puis case DFIR-IRIS (HIGH si 3 SPN ou plus)
-  result: non teste
-  evidence: ''
+  result: "Succes. Kerberoasting lance depuis Kali (192.168.20.200) avec le compte vagrant@test.local : 49 SPN distincts demandes en RC4 entre 11:25:27 et 11:25:28 sur DC.test.local. La requete renvoie severity_hint=HIGH (49 SPN >= 3). Alerte recue dans DFIR-IRIS (#319, [BUILD] [MEDIUM] Kerberoasting - demande de tickets de service en RC4, severite Medium) a 11:35."
+  evidence: Tests/validation_environnement/DM-AD-001.csv et Tests/validation_environnement/captures/DM-AD-001.png
 untestable_reason: ''
 changelog:
 - date: 2026/11/02
@@ -130,3 +130,6 @@ changelog:
   change: >
     Revue - logsource conforme Sigma, exclusion krbtgt exacte, exclusion des demandeurs machine,
     fields aux noms Sigma, lookup d'exclusion integre a la SPL, trigger par resultat, prerequis de test.
+- date: 2026/11/06
+  author: Jonas FONTAINE-DEMAY
+  change: Passage en test - resultats du test lab du 05/11 reportes (CSV et capture IRIS), noms de champs verifies dans Splunk

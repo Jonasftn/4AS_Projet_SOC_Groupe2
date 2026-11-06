@@ -44,7 +44,7 @@ owner = admin
 version = 8.0.2
 modtime = 1788977542.826976000
 
-[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Impacket%20WMIExec]
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Impacket%20WMIExec%20-%20execution%20de%20commandes%20a%20distance]
 owner = admin
 version = 8.0.2
 modtime = 1793644894.790706000
@@ -54,7 +54,7 @@ owner = admin
 version = 8.0.2
 modtime = 1793786532.218644000
 
-[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20Dump%20LSASS]
+[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20Dump%20de%20la%20memoire%20LSASS]
 owner = admin
 version = 8.0.2
 modtime = 1793966000.367872000
@@ -142,7 +142,7 @@ owner = admin
 version = 8.0.2
 modtime = 1793798169.602980000
 
-[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Effacement%20des%20journaux%20d%27%C3%A9v%C3%A8nements]
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Effacement%20des%20journaux%20d%27evenements]
 owner = admin
 version = 8.0.2
 modtime = 1793799039.795575000
@@ -222,7 +222,7 @@ owner = admin
 version = 8.0.2
 modtime = 1793954244.165764000
 
-[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Enfant%20inhabituel%20de%20WmiPrvSE]
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Processus%20enfant%20inhabituel%20de%20WmiPrvSE%20%28variante%20silentcommand%29]
 access = read : [ * ]
 export = none
 owner = admin

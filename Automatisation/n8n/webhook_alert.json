@@ -1,0 +1,541 @@
+{
+  "name": "webhook_alert",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "alert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        -112
+      ],
+      "id": "f26481cb-199e-4ebe-b57f-075d73e641e0",
+      "name": "Webhook",
+      "webhookId": "86265a65-5386-4683-9d13-ff85b51ac085"
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "httpVariantWarning": "",
+        "method": "POST",
+        "url": "https://iris-nginx/alerts/add",
+        "": "",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "dfirIrisApi",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "alert_title",
+              "value": "={{ $json.body.search_name }}"
+            },
+            {
+              "name": "alert_description",
+              "value": "={{ $json.body.search_name }}"
+            },
+            {
+              "name": "alert_source",
+              "value": "={{ $json.body.result.host }} : {{ $json.body.result.source }}"
+            },
+            {
+              "name": "alert_source_ref",
+              "value": "={{ $json.body.result.sourcetype }}"
+            },
+            {
+              "name": "alert_severity_id",
+              "value": "={{ $json.severity }}"
+            },
+            {
+              "name": "alert_status_id",
+              "value": "2"
+            },
+            {
+              "name": "alert_source_event_time",
+              "value": "={{ $json.body.result.timestamp }}"
+            },
+            {
+              "name": "alert_customer_id",
+              "value": "2"
+            },
+            {
+              "name": "alert_source_content",
+              "value": "={{ $json.body.result.body }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        },
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "a92c96d0-3a1c-4ef2-b6bb-e8123cd03250",
+      "name": "DFIR-IRIS HTTP Request",
+      "extendsCredential": "dfirIrisApi",
+      "credentials": {
+        "dfirIrisApi": {
+          "id": "fV17K83jDqNG7Eqg",
+          "name": "DFIR-IRIS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f71be586-e3a4-4c40-a5b9-3148e379706b",
+              "name": "severity",
+              "value": "3",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        -544
+      ],
+      "id": "8955955c-4535-4f0c-828d-c2f40b30a2e4",
+      "name": "INFO"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76a331ac-45ed-4914-892f-5b2dd6e07072",
+              "leftValue": "={{ $json.body.search_name }}",
+              "rightValue": "=[INFO]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -544
+      ],
+      "id": "42473946-dd17-4408-99b0-d6024be9b77a",
+      "name": "INFO - TITRE"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76a331ac-45ed-4914-892f-5b2dd6e07072",
+              "leftValue": "={{ $json.body.search_name }}",
+              "rightValue": "=[MEDIUM]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -176
+      ],
+      "id": "ac6bb845-faac-4c94-ba3b-7b3fca733842",
+      "name": "MEDIUM - TITRE"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f71be586-e3a4-4c40-a5b9-3148e379706b",
+              "name": "severity",
+              "value": "1",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        -176
+      ],
+      "id": "dae67882-98f9-4bfa-a0d5-94c29c8194c8",
+      "name": "MEDIUM"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76a331ac-45ed-4914-892f-5b2dd6e07072",
+              "leftValue": "={{ $json.body.search_name }}",
+              "rightValue": "=[HIGH]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        0
+      ],
+      "id": "5fb5ecdd-d0dc-4d39-ab60-aef34226712a",
+      "name": "HIGH - TITRE"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f71be586-e3a4-4c40-a5b9-3148e379706b",
+              "name": "severity",
+              "value": "5",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        0
+      ],
+      "id": "6c4b6c54-f4bb-48a1-bf8b-a9511ff3b437",
+      "name": "HIGH"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76a331ac-45ed-4914-892f-5b2dd6e07072",
+              "leftValue": "={{ $json.body.search_name }}",
+              "rightValue": "=[CRITICAL]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        208
+      ],
+      "id": "92c053f4-d0c3-4d83-a649-bbd05e0f595c",
+      "name": "CRITICAL - TITRE"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f71be586-e3a4-4c40-a5b9-3148e379706b",
+              "name": "severity",
+              "value": "6",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        208
+      ],
+      "id": "18bf5098-2d4b-4605-b380-04c6307d5e90",
+      "name": "CRITICAL"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f71be586-e3a4-4c40-a5b9-3148e379706b",
+              "name": "severity",
+              "value": "4",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        -368
+      ],
+      "id": "945913a5-6ce1-460a-99b8-0f26ac5db3f3",
+      "name": "INFO1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76a331ac-45ed-4914-892f-5b2dd6e07072",
+              "leftValue": "={{ $json.body.search_name }}",
+              "rightValue": "=[LOW]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -368
+      ],
+      "id": "0edc413d-1796-44e6-9f57-87a10cc2b3e0",
+      "name": "LOW - TITRE"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "INFO - TITRE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MEDIUM - TITRE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HIGH - TITRE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CRITICAL - TITRE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LOW - TITRE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INFO": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INFO - TITRE": {
+      "main": [
+        [
+          {
+            "node": "INFO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MEDIUM - TITRE": {
+      "main": [
+        [
+          {
+            "node": "MEDIUM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MEDIUM": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIGH - TITRE": {
+      "main": [
+        [
+          {
+            "node": "HIGH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRITICAL - TITRE": {
+      "main": [
+        [
+          {
+            "node": "CRITICAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIGH": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRITICAL": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INFO1": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LOW - TITRE": {
+      "main": [
+        [
+          {
+            "node": "INFO1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ff2e2fd8-2cbe-4d7c-9fe9-48415e6b1719",
+  "meta": {
+    "instanceId": "6639a999682eff754404f27793d22da98e9cb75ce70c0b8b43f76fc234de5698"
+  },
+  "nodeGroups": [],
+  "id": "KEC916bWzWWqiAFZ",
+  "tags": []
+}

@@ -135,7 +135,7 @@ tests:
   evidence: captures Splunk
 - date: 2026/11/04
   environment: donnees d'exemple (index test_reseau)
-  command: Recherche sur eve_flow_synthetique.json
+  command: Recherche sur test_log_suricata.json
   expected: Horizontal pour 10.99.0.51, rien pour 10.99.0.20
   result: valide sur donnees d'exemple, alertes IRIS 144 et 145
   evidence: ''

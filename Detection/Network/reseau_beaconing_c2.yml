@@ -133,7 +133,7 @@ tests:
   evidence: DM-NET-002_beaconing_c2_resultats.csv
 - date: 2026/11/04
   environment: donnees d'exemple (index test_reseau)
-  command: Recherche sur eve_flow_synthetique.json
+  command: Recherche sur test_log_suricata.json
   expected: Un resultat pour 10.99.0.30, rien pour 10.99.0.31 et 10.99.0.32
   result: valide sur donnees d'exemple, alerte IRIS 147
   evidence: ''

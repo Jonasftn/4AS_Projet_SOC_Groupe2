@@ -123,7 +123,7 @@ investigation:
   - P-NET-CONN
   - P-PROC-TREE
   - P-SRC-IP-SCOPE
-  client_notification: oui - delais SLA HIGH A_COMPLETER (texte et tableau des slides differents)
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
 tests:
 - date: 2026/11/06
   environment: lab groupe 2 - kunai-g3 vers 1.1.1.1

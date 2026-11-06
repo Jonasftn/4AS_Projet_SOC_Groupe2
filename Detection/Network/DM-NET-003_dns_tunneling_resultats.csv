@@ -1,0 +1,2 @@
+ComputerName,domain,"nb_uniques","longueur_moyenne","longueur_max",images,"premier_evenement","dernier_evenement",exclude,"rule_id"
+"SRV.test.local","tunnel-test.invalid",300,"36.0",36,"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe","2026-11-04 17:06:48","2026-11-04 17:23:49",,"DM-NET-004"

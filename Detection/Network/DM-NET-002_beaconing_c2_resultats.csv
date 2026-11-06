@@ -1,0 +1,2 @@
+"src_ip","dest_ip","dest_port","nb_connexions","intervalle_moyen","ecart_type","octets_envoyes_moyen","premier_evenement","dernier_evenement",cv,exclude,"rule_id"
+"192.168.20.50","1.1.1.1",80,30,"15.0","0.001713194554534292",475,"2026-11-06 07:59:16","2026-11-06 08:06:31","0.000",,"DM-NET-002"

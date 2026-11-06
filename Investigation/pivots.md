@@ -161,6 +161,37 @@ index=main host="<HOST>" earliest="<HEURE-1h>" latest="<HEURE+1h>"
 | sort _time
 ```
 
-### P-LINUX-EXEC et P-NET-IDS
+### P-LINUX-EXEC
 
-Ces deux pivots dépendent des sourcetypes Kunai et Suricata de production, absents du lab. Leurs requêtes seront écrites et validées au démarrage du RUN.
+Commandes exécutées sur un serveur Linux (Kunai, événements `execve`), par utilisateur. Un événement Kunai peut contenir plusieurs objets JSON : la requête les sépare avant extraction, comme les règles DM-LIN.
+
+```
+index=main sourcetype=kunai "<HOST>" earliest=-24h
+| rex max_match=0 field=_raw "(?<obj>\{\"data\":.*?\"utc_time\":\"[^\"]+\"\}\})"
+| mvexpand obj
+| spath input=obj path=info.event.name output=ev
+| search ev="execve"
+| spath input=obj path=info.host.name output=srv
+| spath input=obj path=info.task.user output=usr
+| spath input=obj path=data.command_line output=cl
+| spath input=obj path=data.ancestors output=ancetres
+| search srv="<HOST>"
+| table _time srv usr cl ancetres
+| sort _time
+```
+
+Pour restreindre à un compte, ajouter `| search usr="<USER>"`. Le champ `data.ancestors` donne la chaîne des processus parents (shell SSH, cron, service…).
+
+### P-NET-IDS
+
+Alertes Suricata et flux réseau impliquant une IP, en source ou en destination.
+
+```
+index=main sourcetype=suricata (src_ip="<IP>" OR dest_ip="<IP>") earliest=-24h
+| eval sens=if(src_ip="<IP>", "sortant", "entrant")
+| stats count as nb min(_time) as premier max(_time) as dernier values(dest_port) as ports values(alert.signature) as signatures max(alert.severity) as severite_max by event_type sens src_ip dest_ip
+| eval premier=strftime(premier, "%F %T"), dernier=strftime(dernier, "%F %T")
+| sort - nb
+```
+
+Les lignes `event_type=alert` donnent les signatures IDS levées sur l'IP. Les lignes `event_type=flow` donnent le volume et les ports contactés, même sans signature.

@@ -3,8 +3,8 @@
 | Champ | Valeur |
 |---|---|
 | ID | DM-WIN-009 |
-| Nom de l'alerte Splunk | <à compléter depuis le YAML> |
-| Sévérité | <à compléter depuis le YAML> |
+| Nom de l'alerte Splunk | [BUILD] [MEDIUM] Utilisation de LOLBin pour telechargement ou execution |
+| Sévérité | Medium |
 | MITRE ATT&CK | T1218 – System Binary Proxy Execution ; T1197 – BITS Jobs |
 | Statut | Validée de bout en bout (périmètre limité à bitsadmin) |
 

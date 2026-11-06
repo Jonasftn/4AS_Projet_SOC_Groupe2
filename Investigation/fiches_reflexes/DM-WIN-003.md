@@ -3,8 +3,8 @@
 | Champ | Valeur |
 |---|---|
 | ID | DM-WIN-003 |
-| Nom de l'alerte Splunk | <à compléter depuis le YAML> |
-| Sévérité | <à compléter depuis le YAML> |
+| Nom de l'alerte Splunk | [BUILD] [MEDIUM] Creation ou modification d'une cle Run |
+| Sévérité | Medium |
 | MITRE ATT&CK | T1547.001 – Registry Run Keys / Startup Folder |
 | Statut | Validée de bout en bout (Splunk → DFIR-IRIS) |
 

@@ -11,7 +11,7 @@ Les alertes de la file sont traitées par sévérité décroissante, puis par é
 | MEDIUM | Non requise | 8h | Non requises |
 | LOW | Non requise | 12h | Non requises |
 
-Les SLA courent à partir de l'heure de l'alerte, pas de la prise en charge. Le texte des engagements du sujet annonce une notification sous 4h et une qualification sous 8h, alors que le tableau du sujet donne 2h et 4h. Nous appliquons le tableau, qui est le plus exigeant. Ce point reste à confirmer avec les intervenants.
+Les SLA courent à partir de l'heure de l'alerte, pas de la prise en charge. Pour les incidents CRITICAL et HIGH, la notification client est due sous 2h et le rapport d'investigation v1 sous 4h.
 
 ## Définition des niveaux
 

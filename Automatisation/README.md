@@ -62,7 +62,6 @@ Ces deux points sont les axes d'amélioration prioritaires de l'automatisation.
 |---|---|
 | `n8n/webhook_alert.json` | Export du workflow (sans credentials) |
 | `templates/notification_client.md` | Modèle cible de notification client (HIGH/CRITICAL) |
-| `scripts/` | Scripts utilitaires (à compléter) |
 
 ## Réimporter le workflow
 

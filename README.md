@@ -10,8 +10,8 @@ Mini SOC d'AEGIS CyberProtect pour le client Dunder Mifflin : règles de détect
 | [`Investigation/`](Investigation/) | Workflow d'investigation, [librairie de pivots](Investigation/pivots.md), [fiches réflexes](Investigation/fiches_reflexes/) |
 | [`Tests/`](Tests/) | Preuves de validation des règles dans le lab (exports CSV Splunk, captures DFIR-IRIS) |
 | [`Documentation/`](Documentation/) | Architecture et sources, matrices de priorisation et de communication, MCO/MCD, organisation |
-| `Automatisation/` | Workflows n8n, templates de notification, scripts (à venir) |
-| [`SA_BUILD/`](SA_BUILD/) | Export de l'application Splunk : [`local/savedsearches.conf`](SA_BUILD/local/savedsearches.conf) (alertes `[BUILD]`), [`metadata/local.meta`](SA_BUILD/metadata/local.meta), dashboards (à venir) |
+| [`Automatisation/`](Automatisation/) | Workflow n8n (Splunk → DFIR-IRIS), template de notification client |
+| [`SA_BUILD/`](SA_BUILD/) | Export de l'application Splunk : [`local/savedsearches.conf`](SA_BUILD/local/savedsearches.conf) (alertes `[BUILD]`), [`metadata/local.meta`](SA_BUILD/metadata/local.meta). Pas de dashboard Splunk : le suivi des alertes se fait dans DFIR-IRIS |
 
 ## Chaîne de traitement
 

@@ -1,0 +1,153 @@
+title: Beaconing C2 - connexions regulieres vers l'exterieur
+id: DM-NET-002
+status: test
+description: >
+  Detecte des connexions tres regulieres d'une source vers une meme destination externe et un meme port,
+  avec au moins 12 connexions sur 24 heures et un coefficient de variation inferieur a 0.15.
+author: Groupe 2 - Youssef
+date: 2026/11/02
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1071/
+tags:
+- attack.command_and_control
+- attack.t1071
+killchain: Commande et controle
+attack_summary:
+  mechanism: Un implant contacte son serveur C2 a intervalles reguliers, avec un leger jitter, pour recevoir des ordres.
+  attacker_prerequisites: Implant execute sur un hote interne.
+  environment_prerequisites: Suricata voit le trafic sortant et ses evenements flow arrivent dans Splunk.
+  complexity: moyenne
+logsource:
+  product: network
+  category: flow
+  service: suricata
+data_requirements:
+- source: suricata (eve.json)
+  event_ids:
+  - flow
+  audit_policy: Suricata NIDS
+  collected_on: kunai-g3 (lab), pare-feu (production)
+  verified_in_splunk: true
+  notes: Suricata deploye sur kunai-g3 et collecte dans Splunk (index main, sourcetype suricata). Champs src_ip, dest_ip, dest_port, flow.start et flow.bytes_toserver verifies.
+detection:
+  selection_flow:
+    event_type: flow
+  filter_dest_non_externe:
+    dest_ip|cidr:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 127.0.0.0/8
+    - 169.254.0.0/16
+    - 224.0.0.0/4
+  condition: selection_flow and not filter_dest_non_externe | count >= 12 and cv(delta) < 0.15 and avg(delta) > 10 by src_ip,dest_ip,dest_port
+fields:
+- rule_id
+- src_ip
+- dest_ip
+- dest_port
+- nb_connexions
+- intervalle_moyen
+- ecart_type
+- cv
+- octets_envoyes_moyen
+- premier_evenement
+- dernier_evenement
+level: high
+severity_rationale: >
+  Implant actif probable. HIGH.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- Mises a jour automatiques
+- NTP
+- Telemetrie
+- Tailscale
+- Supervision
+exclusions:
+  mechanism: lookup CSV (DM-NET-002_exclusions.csv, colonnes dest_ip,exclude, dans SA-BUILD/lookups)
+  entries: []
+known_evasions:
+- Jitter eleve
+- Intervalles superieurs a environ 2 heures
+- Connexion longue unique
+- Destination interne
+- Rotation de domaines ou d'IP
+design_choice: >
+  Coefficient de variation pour mesurer la regularite des connexions par source, destination et port.
+  Fenetre de 24 heures et minimum de 12 connexions pour couvrir des intervalles jusqu'a environ 2 heures.
+  Heure de debut du flow utilisee si disponible. Execution horaire car le tri est couteux. Les seuils
+  sont des choix de conception a ajuster apres les tests.
+splunk:
+  alert_name: '[BUILD] [HIGH] Beaconing C2 - connexions regulieres vers l''exterieur'
+  app: SA-BUILD
+  sharing: app
+  index: main
+  cron: '0 * * * *'
+  earliest: -24h@h
+  latest: '@h'
+  trigger: number of results > 0
+  trigger_mode: for_each_result
+  throttle:
+    fields: src_ip,dest_ip,dest_port
+    period: 24h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main sourcetype=suricata event_type=flow
+    | where NOT (cidrmatch("10.0.0.0/8", dest_ip) OR cidrmatch("172.16.0.0/12", dest_ip) OR cidrmatch("192.168.0.0/16", dest_ip) OR cidrmatch("127.0.0.0/8", dest_ip) OR cidrmatch("169.254.0.0/16", dest_ip) OR cidrmatch("224.0.0.0/4", dest_ip) OR dest_ip="255.255.255.255" OR like(dest_ip, "%:%"))
+    | eval heure_flux=coalesce(strptime('flow.start', "%Y-%m-%dT%H:%M:%S.%6N%z"), _time)
+    | sort 0 src_ip dest_ip dest_port heure_flux
+    | streamstats current=f last(heure_flux) as heure_precedente by src_ip, dest_ip, dest_port
+    | eval delta=heure_flux-heure_precedente
+    | stats count as nb_connexions avg(delta) as intervalle_moyen stdev(delta) as ecart_type avg(flow.bytes_toserver) as octets_envoyes_moyen min(heure_flux) as premier_evenement max(heure_flux) as dernier_evenement by src_ip, dest_ip, dest_port
+    | eval cv=round(ecart_type/intervalle_moyen, 3), intervalle_moyen=round(intervalle_moyen, 1), octets_envoyes_moyen=round(octets_envoyes_moyen, 0)
+    | where nb_connexions>=12 AND cv<0.15 AND intervalle_moyen>10
+    | lookup DM-NET-002_exclusions.csv dest_ip OUTPUT exclude
+    | where isnull(exclude)
+    | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
+    | eval rule_id="DM-NET-002"
+response:
+  containment:
+  - Isoler l'hote source
+  - Bloquer la destination au pare-feu
+  remediation:
+  - Supprimer l'implant
+  - Rotation des identifiants de l'hote
+  do_not:
+  - Ne pas couper le flux avant d'avoir identifie le processus
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-NET-002.md
+  pivots:
+  - P-NET-CONN
+  - P-PROC-TREE
+  - P-SRC-IP-SCOPE
+  client_notification: oui - notification client sous 2h (SLA HIGH), qualification sous 4h
+tests:
+- date: 2026/11/06
+  environment: lab groupe 2 - kunai-g3 vers 1.1.1.1
+  command: for i in $(seq 1 30); do curl -s -o /dev/null --max-time 5 http://1.1.1.1/; sleep 15; done
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: detection valide - 30 connexions, intervalle 15.0 s, cv 0.000, alerte IRIS 400
+  evidence: DM-NET-002_beaconing_c2_resultats.csv
+- date: 2026/11/04
+  environment: donnees d'exemple (index test_reseau)
+  command: Recherche sur test_log_suricata.json
+  expected: Un resultat pour 10.99.0.30, rien pour 10.99.0.31 et 10.99.0.32
+  result: valide sur donnees d'exemple, alerte IRIS 147
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Youssef
+  change: Creation (draft)
+- date: 2026/11/04
+  author: Youssef
+  change: Calcul par port, filtres multicast/lien local/IPv6, flow.start, fenetre 24h, rule_id, for_each_result
+- date: 2026/11/06
+  author: Youssef
+  change: Test reel avec Suricata sur kunai-g3
+- date: 2026/11/06
+  author: Youssef
+  change: Validation sur vrais logs Suricata de kunai-g3 (30 connexions, cv 0.000)

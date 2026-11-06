@@ -1,0 +1,13 @@
+index=main sourcetype=suricata event_type=flow
+| where NOT (cidrmatch("10.0.0.0/8", dest_ip) OR cidrmatch("172.16.0.0/12", dest_ip) OR cidrmatch("192.168.0.0/16", dest_ip) OR cidrmatch("127.0.0.0/8", dest_ip) OR cidrmatch("169.254.0.0/16", dest_ip) OR cidrmatch("224.0.0.0/4", dest_ip) OR dest_ip="255.255.255.255" OR like(dest_ip, "%:%"))
+| eval heure_flux=coalesce(strptime('flow.start', "%Y-%m-%dT%H:%M:%S.%6N%z"), _time)
+| sort 0 src_ip dest_ip dest_port heure_flux
+| streamstats current=f last(heure_flux) as heure_precedente by src_ip, dest_ip, dest_port
+| eval delta=heure_flux-heure_precedente
+| stats count as nb_connexions avg(delta) as intervalle_moyen stdev(delta) as ecart_type avg(flow.bytes_toserver) as octets_envoyes_moyen min(heure_flux) as premier_evenement max(heure_flux) as dernier_evenement by src_ip, dest_ip, dest_port
+| eval cv=round(ecart_type/intervalle_moyen, 3), intervalle_moyen=round(intervalle_moyen, 1), octets_envoyes_moyen=round(octets_envoyes_moyen, 0)
+| where nb_connexions>=12 AND cv<0.15 AND intervalle_moyen>10
+| lookup DM-NET-002_exclusions.csv dest_ip OUTPUT exclude
+| where isnull(exclude)
+| eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
+| eval rule_id="DM-NET-002"

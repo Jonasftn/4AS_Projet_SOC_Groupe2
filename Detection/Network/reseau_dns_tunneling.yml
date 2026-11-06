@@ -1,0 +1,136 @@
+title: DNS tunneling - volume et longueur anormaux
+id: DM-NET-003
+status: test
+description: >
+  Detecte plus de 100 noms uniques avec des sous-domaines longs pour un meme domaine parent
+  sur une machine Windows en 10 minutes, a partir de Sysmon 22.
+author: Groupe 2 - Youssef
+date: 2026/11/02
+modified: 2026/11/04
+references:
+- https://attack.mitre.org/techniques/T1048/003/
+tags:
+- attack.exfiltration
+- attack.t1048.003
+killchain: Commande et controle / exfiltration
+attack_summary:
+  mechanism: Les donnees sont encodees dans des noms de domaine interroges aupres d'un serveur DNS controle par l'attaquant.
+  attacker_prerequisites: Domaine controle par l'attaquant et execution sur un hote interne.
+  environment_prerequisites: Sysmon 22 journalise et collecte.
+  complexity: moyenne
+logsource:
+  product: windows
+  category: dns_query
+  service: sysmon
+data_requirements:
+- source: WinEventLog:Microsoft-Windows-Sysmon/Operational
+  event_ids:
+  - '22'
+  audit_policy: Configuration Sysmon deployee (sysmon-modular)
+  collected_on: DC et SRV dans le lab
+  verified_in_splunk: true
+  notes: Verifier que EventCode=22 remonte et que la configuration n'exclut pas le domaine de test ni les requetes en echec.
+detection:
+  selection:
+    EventID: 22
+  filter_arpa:
+    QueryName|endswith:
+    - .in-addr.arpa
+    - .ip6.arpa
+  condition: selection and not filter_arpa | dc(QueryName) > 100 and avg(len(sous_domaine)) > 20 by ComputerName,domain
+fields:
+- rule_id
+- ComputerName
+- domain
+- nb_uniques
+- longueur_moyenne
+- longueur_max
+- images
+- premier_evenement
+- dernier_evenement
+level: medium
+severity_rationale: >
+  Canal C2 ou exfiltration possible. MEDIUM.
+severity_modifiers:
+- +1 si l'actif est critique (DC, bastion) ou si un compte privilegie ou VIP est implique
+- +1 si plusieurs regles se declenchent pour la meme source
+falsepositives:
+- CDN
+- Services cloud
+- Antivirus
+exclusions:
+  mechanism: lookup CSV (DM-NET-003_exclusions.csv, colonnes domain,exclude, dans SA-BUILD/lookups)
+  entries: []
+known_evasions:
+- Faible debit
+- Sous-domaines courts
+- Repartition sur plusieurs domaines parents
+- Outil qui ne passe pas par le client DNS Windows
+- Hote Linux non couvert par Sysmon
+design_choice: >
+  Combinaison du nombre de noms uniques et de la longueur moyenne pour limiter le bruit. Exclusion des
+  zones arpa et prise en compte de suffixes du type co.uk. Les seuils sont des choix de conception a
+  ajuster apres les tests.
+splunk:
+  alert_name: '[BUILD] [MEDIUM] DNS tunneling - volume et longueur anormaux'
+  app: SA-BUILD
+  sharing: app
+  index: main
+  cron: '*/10 * * * *'
+  earliest: -20m@m
+  latest: -10m@m
+  trigger: number of results > 0
+  trigger_mode: for_each_result
+  throttle:
+    fields: ComputerName,domain
+    period: 1h
+  webhook_url: http://soc_n8n:5678/webhook/alert
+  search: |
+    index=main source="wineventlog:microsoft-windows-sysmon/operational" EventCode=22
+    | eval requete=lower(trim(QueryName, "."))
+    | where NOT match(requete, "[.](in-addr|ip6)[.]arpa$")
+    | rex field=requete "^(?<sous_domaine>.+?)[.](?<domain>[^.]+[.](?:(?:co|com|org|net|gov|ac|edu)[.][a-z]{2}|[^.]+))$"
+    | where isnotnull(domain)
+    | eval longueur=len(sous_domaine)
+    | stats dc(requete) as nb_uniques avg(longueur) as longueur_moyenne max(longueur) as longueur_max values(Image) as images min(_time) as premier_evenement max(_time) as dernier_evenement by ComputerName, domain
+    | eval longueur_moyenne=round(longueur_moyenne, 1)
+    | where nb_uniques>100 AND longueur_moyenne>20
+    | lookup DM-NET-003_exclusions.csv domain OUTPUT exclude
+    | where isnull(exclude)
+    | eval premier_evenement=strftime(premier_evenement, "%F %T"), dernier_evenement=strftime(dernier_evenement, "%F %T")
+    | eval rule_id="DM-NET-003"
+response:
+  containment:
+  - Bloquer le domaine au DNS
+  - Isoler l'hote
+  remediation:
+  - Filtrage DNS sortant
+  do_not:
+  - Ne pas resoudre le domaine depuis un poste du client
+investigation:
+  playbook: Investigation/fiches_reflexes/DM-NET-003.md
+  pivots:
+  - P-DNS-QUERIES
+  - P-PROC-TREE
+  client_notification: non - qualification sous 8h (SLA MEDIUM)
+tests:
+- date: 2026/11/04
+  environment: lab groupe 2 - SRV
+  command: '1..150|%{Resolve-DnsName "$(New-Guid).tunnel-test.invalid" -ea 0}'
+  expected: Alerte MEDIUM dans Splunk puis DFIR-IRIS
+  result: valide - 150 noms uniques detectes, alerte IRIS 113
+  evidence: DM-NET-003_dns_tunneling_resultats.csv
+- date: ''
+  environment: lab groupe 2 - SRV
+  command: 150 noms aleatoires de 15 caracteres avec Resolve-DnsName vers tunnel-test.invalid
+  expected: Aucune alerte
+  result: non teste
+  evidence: ''
+untestable_reason: ''
+changelog:
+- date: 2026/11/02
+  author: Youssef
+  change: Creation (draft)
+- date: 2026/11/04
+  author: Youssef
+  change: Test avec Resolve-DnsName, suffixes multi-niveaux, zones arpa, seuils alignes, rule_id, for_each_result, exclusions, resultats de test

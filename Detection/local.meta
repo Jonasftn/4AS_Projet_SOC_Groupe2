@@ -1,0 +1,230 @@
+[app/install/install_source_checksum]
+version = 8.0.2
+modtime = 1788803825.601308000
+
+[app/ui]
+owner = admin
+version = 8.0.2
+modtime = 1788803848.200185000
+
+[app/launcher]
+owner = admin
+version = 8.0.2
+modtime = 1788803848.202089000
+
+[app/package/check_for_updates]
+version = 8.0.2
+modtime = 1788803848.202960000
+
+[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20TestAlert%20Cloner]
+access = read : [ * ], write : [ * ]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1788977526.785572000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20TestAlert%20Cloner]
+access = read : [ * ], write : [ * ]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1788977532.181781000
+
+[savedsearches/%5BBUILD%5D%20%5BLOW%5D%20TestAlert%20Cloner]
+access = read : [ * ], write : [ * ]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1788977537.053021000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20TestAlert]
+access = read : [ * ], write : [ * ]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1788977542.826976000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Impacket%20WMIExec]
+owner = admin
+version = 8.0.2
+modtime = 1793644894.790706000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Modification%20de%20la%20politique%20d%27audit]
+owner = admin
+version = 8.0.2
+modtime = 1793786532.218644000
+
+[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20Dump%20LSASS]
+owner = admin
+version = 8.0.2
+modtime = 1793966000.367872000
+
+[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20Extraction%20de%20NTDS.dit]
+owner = admin
+version = 8.0.2
+modtime = 1793727495.868245000
+
+[lookups/DM-LIN-002_exclusions.csv]
+access = read : [ * ], write : [ * ]
+export = system
+owner = admin
+version = 8.0.2
+modtime = 1793787286.086582000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Recherche%20de%20secrets%20et%20mots%20de%20passe]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1793954198.315285000
+
+[props/kunai_shadow_json]
+owner = admin
+version = 8.0.2
+modtime = 1793787803.190046000
+
+[lookups/DM-LIN-003_exclusions.csv]
+access = read : [ * ], write : [ * ]
+export = system
+owner = admin
+version = 8.0.2
+modtime = 1793788108.838212000
+
+[lookups/DM-LIN-001_exclusions.csv]
+access = read : [ * ], write : [ * ]
+export = system
+owner = admin
+version = 8.0.2
+modtime = 1793788992.326639000
+
+[props/kunai_enum_json]
+owner = admin
+version = 8.0.2
+modtime = 1793789151.826600000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Creation%20d%27une%20tache%20planifiee%20suspecte]
+owner = admin
+version = 8.0.2
+modtime = 1793792489.337966000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Creation%20d%27un%20service%20suspect]
+owner = admin
+version = 8.0.2
+modtime = 1793793216.170127000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Creation%20ou%20modification%20d%27une%20cle%20Run]
+owner = admin
+version = 8.0.2
+modtime = 1793793815.592476000
+
+[savedsearches/%5BBUILD%5D%20%5BLOW%5D%20Multiples%20commandes%20d%27%27enumeration%20locale]
+owner = admin
+version = 8.0.2
+modtime = 1793954224.632252000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Acces%20a%20%2Fetc%2Fshadow%20Clone]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1793954183.262079000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Utilisation%20de%20LOLBin%20pour%20telechargement%20ou%20execution]
+owner = admin
+version = 8.0.2
+modtime = 1793794869.042374000
+
+[props/linux_pass_json]
+owner = admin
+version = 8.0.2
+modtime = 1793798058.877118000
+
+[props/kunai_pass_json]
+owner = admin
+version = 8.0.2
+modtime = 1793798169.602980000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Effacement%20des%20journaux%20d%27%C3%A9v%C3%A8nements]
+owner = admin
+version = 8.0.2
+modtime = 1793799039.795575000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Password%20spraying]
+owner = admin
+version = 8.0.2
+modtime = 1793802848.462896000
+
+[savedsearches/%5BBUILD%5D%20%5BCRITICAL%5D%20DCSync]
+owner = admin
+version = 8.0.2
+modtime = 1793874605.165876000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Kerberos%20Delegation%20Modification]
+owner = admin
+version = 8.0.2
+modtime = 1793806026.521468000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20DNS%20tunneling%20-%20volume%20et%20longueur%20anormaux]
+owner = admin
+version = 8.0.2
+modtime = 1793813271.680237000
+
+[indexes/test_reseau]
+owner = admin
+version = 8.0.2
+modtime = 1793813630.122017000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Kerberoasting%20-%20demande%20de%20tickets%20de%20service%20en%20RC4]
+owner = admin
+version = 8.0.2
+modtime = 1793877806.788907000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20AS-REP%20Roasting%20-%20AS-REQ%20sans%20pre-authentification]
+owner = admin
+version = 8.0.2
+modtime = 1793883649.063666000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Shadow%20Credentials%20-%20modification%20de%20msDS-KeyCredentialLink]
+owner = admin
+version = 8.0.2
+modtime = 1793885956.168635000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Ajout%20d%27un%20membre%20a%20un%20groupe%20AD%20critique]
+owner = admin
+version = 8.0.2
+modtime = 1793886253.948353000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Recherche%20de%20secrets%20et%20mots%20de%20passe%20%28kunai%29]
+owner = admin
+version = 8.0.2
+modtime = 1793954207.098651000
+
+[savedsearches/%5BBUILD%5D%20%5BLOW%5D%20Multiples%20commandes%20d%27%27enumeration%20locale%20%28kunai%29]
+owner = admin
+version = 8.0.2
+modtime = 1793954234.117146000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Acces%20a%20%2Fetc%2Fshadow%20%28kunai%29]
+owner = admin
+version = 8.0.2
+modtime = 1793954167.706077000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Scan%20de%20ports%20horizontal%20et%20vertical]
+owner = admin
+version = 8.0.2
+modtime = 1793952648.093961000
+
+[savedsearches/%5BBUILD%5D%20%5BHIGH%5D%20Beaconing%20C2%20-%20connexions%20regulieres%20vers%20l%27exterieur]
+owner = admin
+version = 8.0.2
+modtime = 1793954246.560929000
+
+[savedsearches/%5BBUILD%5D%20%5BLOW%5D%20Multiples%20commandes%20d%27%27enumeration%20locale%20%28kunai_v2%29]
+owner = admin
+version = 8.0.2
+modtime = 1793954244.165764000
+
+[savedsearches/%5BBUILD%5D%20%5BMEDIUM%5D%20Enfant%20inhabituel%20de%20WmiPrvSE]
+access = read : [ * ]
+export = none
+owner = admin
+version = 8.0.2
+modtime = 1793967176.299036000

@@ -43,7 +43,7 @@
             },
             {
               "name": "alert_description",
-              "value": "={{ $json.body.search_name }}"
+              "value": "={{ $json.body.search_name }}{{ $json.notification_client ? '\\n\\n━━━ NOTIFICATION CLIENT (brouillon) ━━━\\n' + $json.notification_client : '' }}"
             },
             {
               "name": "alert_source",
@@ -83,8 +83,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        800,
-        -80
+        1024,
+        -96
       ],
       "id": "a92c96d0-3a1c-4ef2-b6bb-e8123cd03250",
       "name": "DFIR-IRIS HTTP Request",
@@ -380,6 +380,54 @@
       ],
       "id": "0edc413d-1796-44e6-9f57-87a10cc2b3e0",
       "name": "LOW - TITRE"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a73c4fc9-80b6-4c8e-bc97-9cca74f25e0a",
+              "name": "notification_client",
+              "value": "={{ `BROUILLON NOTIFICATION CLIENT — SLA 2h — a valider avant envoi\\n\\n` +\n`Objet : [SOC AEGIS] Alerte ${ ($json.body.search_name.match(/\\[(INFO|LOW|MEDIUM|HIGH|CRITICAL)\\]/) || [,'N/A'])[1] } — Dunder Mifflin\\n\\n` +\n`Bonjour,\\nNotre SOC a detecte un evenement de securite necessitant votre attention.\\n\\n` +\n`Regle declenchee : ${ $json.body.search_name }\\n` +\n`Hote : ${ $json.body.result.ComputerName || 'N/A' }\\n` +\n`Compte : ${ $json.body.result.User || $json.body.result.account || $json.body.result.actor || 'N/A' }\\n` +\n`Source (IP) : ${ $json.body.result.src_ip || 'N/A' }\\n` +\n`Destination : ${ $json.body.result.dest_ip || 'N/A' }\\n` +\n`Premiere occurrence : ${ $json.body.result.premier_evenement || $json.body.result.first_seen || 'N/A' }\\n\\n` +\n`Recommandation immediate : isoler l'hote ou bloquer l'IP concernee. Ne rien eteindre ni reinitialiser avant notre accord (preservation des preuves). Un premier rapport de qualification vous sera transmis sous 4h.\\n\\n` +\n`L'equipe SOC — AEGIS CyberProtect` }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "fa817322-980f-4e95-bec4-653a50469675",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a73c4fc9-80b6-4c8e-bc97-9cca74f25e0a",
+              "name": "notification_client",
+              "value": "={{ `BROUILLON NOTIFICATION CLIENT — SLA 2h — a valider avant envoi\\n\\n` +\n`Objet : [SOC AEGIS] Alerte ${ ($json.body.search_name.match(/\\[(INFO|LOW|MEDIUM|HIGH|CRITICAL)\\]/) || [,'N/A'])[1] } — Dunder Mifflin\\n\\n` +\n`Bonjour,\\nNotre SOC a detecte un evenement de securite necessitant votre attention.\\n\\n` +\n`Regle declenchee : ${ $json.body.search_name }\\n` +\n`Hote : ${ $json.body.result.ComputerName || 'N/A' }\\n` +\n`Compte : ${ $json.body.result.User || $json.body.result.account || $json.body.result.actor || 'N/A' }\\n` +\n`Source (IP) : ${ $json.body.result.src_ip || 'N/A' }\\n` +\n`Destination : ${ $json.body.result.dest_ip || 'N/A' }\\n` +\n`Premiere occurrence : ${ $json.body.result.premier_evenement || $json.body.result.first_seen || 'N/A' }\\n\\n` +\n`Recommandation immediate : isoler l'hote ou bloquer l'IP concernee. Ne rien eteindre ni reinitialiser avant notre accord (preservation des preuves). Un premier rapport de qualification vous sera transmis sous 4h.\\n\\n` +\n`L'equipe SOC — AEGIS CyberProtect` }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        656,
+        192
+      ],
+      "id": "9462999a-1cc1-446f-8e85-a267e165b202",
+      "name": "Edit Fields1"
     }
   ],
   "pinData": {},
@@ -485,7 +533,7 @@
       "main": [
         [
           {
-            "node": "DFIR-IRIS HTTP Request",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -496,7 +544,7 @@
       "main": [
         [
           {
-            "node": "DFIR-IRIS HTTP Request",
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -524,6 +572,28 @@
           }
         ]
       ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -531,7 +601,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ff2e2fd8-2cbe-4d7c-9fe9-48415e6b1719",
+  "versionId": "750f25a9-d579-45a9-bc4b-6c45cf1f31dc",
   "meta": {
     "instanceId": "6639a999682eff754404f27793d22da98e9cb75ce70c0b8b43f76fc234de5698"
   },

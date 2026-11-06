@@ -1,2 +1,2 @@
-"src_ip","dest_ip","dest_port","nb_connexions","intervalle_moyen","ecart_type","octets_envoyes_moyen","premier_evenement","dernier_evenement",cv,"rule_id"
-"10.99.0.30","203.0.113.50",443,48,"300.4","9.111946555839914",512,"2026-11-04 08:00:00","2026-11-04 11:55:17","0.030","DM-NET-002"
+"src_ip","dest_ip","dest_port","nb_connexions","intervalle_moyen","ecart_type","octets_envoyes_moyen","premier_evenement","dernier_evenement",cv,exclude,"rule_id"
+"192.168.20.50","1.1.1.1",80,30,"15.0","0.001713194554534292",475,"2026-11-06 07:59:16","2026-11-06 08:06:31","0.000",,"DM-NET-002"

@@ -1,6 +1,6 @@
 title: Beaconing C2 - connexions regulieres vers l'exterieur
 id: DM-NET-002
-status: draft
+status: test
 description: >
   Detecte des connexions tres regulieres d'une source vers une meme destination externe et un meme port,
   avec au moins 12 connexions sur 24 heures et un coefficient de variation inferieur a 0.15.
@@ -26,10 +26,10 @@ data_requirements:
 - source: suricata (eve.json)
   event_ids:
   - flow
-  audit_policy: Suricata NIDS sur le pare-feu
-  collected_on: pare-feu
-  verified_in_splunk: false
-  notes: Aucune collecte Suricata dans le lab. Index, sourcetype et champs a confirmer sur des donnees reelles. Seuls les flux qui traversent le pare-feu sont visibles.
+  audit_policy: Suricata NIDS
+  collected_on: kunai-g3 (lab), pare-feu (production)
+  verified_in_splunk: true
+  notes: Suricata deploye sur kunai-g3 et collecte dans Splunk (index main, sourcetype suricata). Champs src_ip, dest_ip, dest_port, flow.start et flow.bytes_toserver verifies.
 detection:
   selection_flow:
     event_type: flow
@@ -125,13 +125,19 @@ investigation:
   - P-SRC-IP-SCOPE
   client_notification: oui - delais SLA HIGH A_COMPLETER (texte et tableau des slides differents)
 tests:
+- date: 2026/11/06
+  environment: lab groupe 2 - kunai-g3 vers 1.1.1.1
+  command: for i in $(seq 1 30); do curl -s -o /dev/null --max-time 5 http://1.1.1.1/; sleep 15; done
+  expected: Alerte HIGH dans Splunk puis DFIR-IRIS
+  result: detection valide - 30 connexions, intervalle 15.0 s, cv 0.000, alerte IRIS 400
+  evidence: DM-NET-002_beaconing_c2_resultats.csv
 - date: 2026/11/04
   environment: donnees d'exemple (index test_reseau)
   command: Recherche sur eve_flow_synthetique.json
-  expected: Un resultat pour 10.99.0.30 vers 203.0.113.50, rien pour 10.99.0.31 et 10.99.0.32
-  result: valide sur donnees d'exemple - 48 connexions, intervalle 300.4 s, cv 0.030, alerte IRIS 147
-  evidence: DM-NET-002_beaconing_c2_resultats.csv
-untestable_reason: 'Aucune collecte Suricata dans le lab (sourcetypes verifies dans Splunk le 2026/11/04): logique validee sur donnees d''exemple dans l''index test_reseau, collecte reelle non verifiee.'
+  expected: Un resultat pour 10.99.0.30, rien pour 10.99.0.31 et 10.99.0.32
+  result: valide sur donnees d'exemple, alerte IRIS 147
+  evidence: ''
+untestable_reason: ''
 changelog:
 - date: 2026/11/02
   author: Youssef
@@ -139,3 +145,9 @@ changelog:
 - date: 2026/11/04
   author: Youssef
   change: Calcul par port, filtres multicast/lien local/IPv6, flow.start, fenetre 24h, rule_id, for_each_result
+- date: 2026/11/06
+  author: Youssef
+  change: Test reel avec Suricata sur kunai-g3
+- date: 2026/11/06
+  author: Youssef
+  change: Validation sur vrais logs Suricata de kunai-g3 (30 connexions, cv 0.000)

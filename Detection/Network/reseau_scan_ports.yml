@@ -1,6 +1,6 @@
 title: Scan de ports horizontal et vertical
 id: DM-NET-001
-status: draft
+status: test
 description: >
   Detecte une source qui contacte plus de 100 ports differents d'une meme cible (scan vertical)
   ou plus de 20 hotes internes differents sur un meme port (scan horizontal) sur une fenetre de 10 minutes.
@@ -26,10 +26,10 @@ data_requirements:
 - source: suricata (eve.json)
   event_ids:
   - flow
-  audit_policy: Suricata NIDS sur le pare-feu
-  collected_on: pare-feu
-  verified_in_splunk: false
-  notes: Aucune collecte Suricata dans le lab. Index, sourcetype et champs (src_ip, dest_ip, dest_port) a confirmer sur des donnees reelles. Seuls les flux qui traversent le pare-feu sont visibles.
+  audit_policy: Suricata NIDS
+  collected_on: kunai-g3 (lab), pare-feu (production)
+  verified_in_splunk: true
+  notes: Suricata deploye sur kunai-g3 et collecte dans Splunk (index main, sourcetype suricata). Champs src_ip, dest_ip et dest_port verifies. Seul le trafic vu par la sonde est visible.
 detection:
   selection_flow:
     event_type: flow
@@ -121,25 +121,25 @@ investigation:
   - P-NET-CONN
   client_notification: non - qualification sous 8h (SLA MEDIUM)
 tests:
-- date: ''
-  environment: non disponible - aucune collecte Suricata dans le lab
-  command: 'nmap -sS -Pn -p- <IP_DC> depuis la Kali'
+- date: 2026/11/06
+  environment: lab groupe 2 - Kali vers kunai-g3
+  command: nmap -sS -Pn -p- 192.168.20.50
   expected: Alerte MEDIUM scan_type=vertical dans Splunk puis DFIR-IRIS
-  result: non teste
-  evidence: ''
-- date: ''
-  environment: non disponible - aucune collecte Suricata dans le lab
-  command: 'nmap -Pn -p 22,80,135,139,389,443,445,3389 <IP_DC> depuis la Kali'
+  result: valide - 65535 ports detectes, alerte IRIS 394
+  evidence: DM-NET-001_scan_ports_resultats.csv
+- date: 2026/11/06
+  environment: lab groupe 2 - Kali vers kunai-g3
+  command: nmap -Pn -p 22,80,135,139,389,443,445,3389 192.168.20.50
   expected: Aucune alerte
-  result: non teste
-  evidence: ''
+  result: valide - 8 ports vus dans Splunk, aucune detection
+  evidence: captures Splunk
 - date: 2026/11/04
   environment: donnees d'exemple (index test_reseau)
   command: Recherche sur eve_flow_synthetique.json
-  expected: Vertical pour 10.99.0.50, horizontal pour 10.99.0.51, rien pour 10.99.0.20
-  result: valide sur donnees d'exemple - resultats attendus, alertes IRIS 144 et 145
-  evidence: DM-NET-001_scan_ports_resultats.csv
-untestable_reason: 'Aucune collecte Suricata dans le lab (sourcetypes verifies dans Splunk le 2026/11/04): logique validee sur donnees d''exemple dans l''index test_reseau, collecte reelle non verifiee. Le scan horizontal depasse aussi la taille du lab.'
+  expected: Horizontal pour 10.99.0.51, rien pour 10.99.0.20
+  result: valide sur donnees d'exemple, alertes IRIS 144 et 145
+  evidence: ''
+untestable_reason: 'Le scan horizontal depasse la taille du lab (environ 5 machines pour un seuil de 20): valide sur donnees d''exemple uniquement.'
 changelog:
 - date: 2026/11/02
   author: Youssef
@@ -147,3 +147,9 @@ changelog:
 - date: 2026/11/04
   author: Youssef
   change: Filtre sur les destinations internes pour le scan horizontal, fenetre de 10 minutes, listes ports et hotes, rule_id, for_each_result
+- date: 2026/11/06
+  author: Youssef
+  change: Tests reels avec Suricata sur kunai-g3, alerte IRIS 394
+- date: 2026/11/06
+  author: Youssef
+  change: Validation sur vrais logs Suricata de kunai-g3, alerte IRIS 394
